@@ -216,3 +216,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# EEG project data
+data/
+*.set
+*.fdt
+
+# Results generated during experiments
+results/*.png
+results/*.jpg
+results/*.pdf
