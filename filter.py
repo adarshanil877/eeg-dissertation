@@ -2,11 +2,12 @@
 import mne
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
 
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.svm import SVC
 
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay
 
 file_path = "data/c01_cleaned.set"
 
@@ -62,14 +63,24 @@ X_train = scaler.transform(X_train)
 X_test = scaler.transform(X_test)
 
 #LDA Model
-model = LinearDiscriminantAnalysis()
+#model = LinearDiscriminantAnalysis()
 
 #SVM Model
-#model = SVC(kernel="linear", random_state=42)
+model = SVC(kernel="linear", random_state=42)
 
 
 model.fit(X_train, y_train)
 
 y_pred = model.predict(X_test)
 
+#accuracy
 print("Accuracy:", accuracy_score(y_test, y_pred))
+
+#confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+
+disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+disp.plot(cmap="plasma")
+
+plt.title("Confusion Matrix")
+plt.show(block=True)
