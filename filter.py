@@ -1,7 +1,11 @@
 #Filtering and ML Classifier
 import mne
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.svm import SVC
+
 from sklearn.metrics import accuracy_score
 
 file_path = "data/c01_cleaned.set"
@@ -28,22 +32,42 @@ epochs = mne.Epochs(
     baseline=None,
     preload=True
 )
-X = epochs.get_data()
+# Computing Power Spectral Density - 5 frequency bands and Power
+psds = epochs.compute_psd(
+    method="welch",
+    fmin=1,
+    fmax=40
+)
+
+X = psds.get_data()
 y = epochs.events[:, -1]
 
-print("X shape:", X.shape)
-print("y shape:", y.shape)
+print("PSD shape:", X.shape)
+print("Labels shape:", y.shape)
 #End of Epoch and preprocessing data
 
 
 # flatten EEG (ML needs 2D)
-X = X.reshape(X.shape[0], -1)
+X = X.reshape(len(X), -1)
+print("Flattened PSD shape:", X.shape)
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
+#NORMALISING AND FEATURE SCALING
+scaler = StandardScaler()
+scaler.fit(X_train)
+X_train = scaler.transform(X_train)
+X_test = scaler.transform(X_test)
+
+#LDA Model
 model = LinearDiscriminantAnalysis()
+
+#SVM Model
+#model = SVC(kernel="linear", random_state=42)
+
+
 model.fit(X_train, y_train)
 
 y_pred = model.predict(X_test)
