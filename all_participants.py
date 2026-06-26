@@ -1,9 +1,12 @@
 #All 12 Participants
 import mne
+mne.set_log_level("ERROR")
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler #Importing Scaling Methods
 from sklearn.decomposition import PCA #Importing PCA
 import matplotlib.pyplot as plt
+import numpy as np
 
 #Importing Models
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -111,6 +114,10 @@ def run_svm(X, y):
 
 #MAIN CODE ------------------------------------
 
+#Arrays to store values of all the X and Y values to calculate total accuracy for 11 participants
+#all_X = []
+#all_y = []
+
 #Arrays to store the Accuracy scores from both models for each Participant
 lda_scores = []
 svm_scores = []
@@ -119,19 +126,23 @@ svm_scores = []
 for file in files:
     
     #Printing the file being processes
-    print("Processing:", file)
+    print("\nProcessing:", file)
 
     #Calling function to Preprocess data and returning the preprocessed data
     X, y = get_features_labels(file)
 
-    #Running the LDA MODEL
+    #Adding X and Y to common variables to calcualte accuracy for all 12 participants
+    #all_X.append(X)
+    #all_y.append(y)
+    
+    #Running the LDA MODEL for One Person
     lda_acc = run_lda(X, y)
 
-    #Running the SVM MODEL
+    #Running the SVM MODEL for One Person
     svm_acc = run_svm(X, y)
 
     #Printing the accuracy for both models for each person at end of 1 iteration
-    print("LDA:", lda_acc, "SVM:", svm_acc)
+    print("LDA: ", lda_acc, "\tSVM: ", svm_acc)
 
     #Adding score to the Array so that we can calculate average accuracy
     lda_scores.append(lda_acc)
@@ -139,5 +150,15 @@ for file in files:
 
 #Final results of both the Models 
 print("\nFinal Results")
-print("LDA Mean:", sum(lda_scores)/len(lda_scores))
-print("SVM Mean:", sum(svm_scores)/len(svm_scores))
+print("LDA Mean: ", sum(lda_scores)/len(lda_scores))
+print("SVM Mean: ", sum(svm_scores)/len(svm_scores))
+
+#X_all = np.vstack(all_X)
+#y_all = np.concatenate(all_y)
+
+#overall_lda = run_lda(X_all, y_all)
+#overall_svm = run_svm(X_all, y_all)
+
+#print("\nCOMBINED DATASET RESULTS")
+#print("Overall LDA: ", overall_lda)
+#print("Overall SVM: ", overall_svm)
