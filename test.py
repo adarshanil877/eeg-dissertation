@@ -1,27 +1,52 @@
 import mne
-mne.set_log_level("ERROR")
-
 import glob
+import numpy as np
+
+mne.set_log_level("ERROR")
 
 files = sorted(glob.glob("data/*.set"))
 
-for file in files:
+def inspect_file(file_path):
 
-    print("\n====================================")
-    print("FILE:", file)
-    print("====================================")
+    print("\n" + "="*50)
+    print("FILE:", file_path)
+    print("="*50)
 
-    raw = mne.io.read_raw_eeglab(file, preload=False)
+    # Load raw EEG
+    raw = mne.io.read_raw_eeglab(file_path, preload=True)
 
+    # 1. Channels
+    print("\nCHANNEL INFO")
+    print("Number of channels:", len(raw.ch_names))
+    print("Channel names:", raw.ch_names)
+
+    # 2. Events
     events, event_id = mne.events_from_annotations(raw)
 
-    print("\nEvent IDs:")
-    print(event_id)
+    print("\nEVENT INFO")
+    print("Event mapping:", event_id)
+    print("Total events:", len(events))
 
-    print("\nNumber of each event:")
+    # 3. Epochs
+    try:
+        epochs = mne.Epochs(
+            raw,
+            events,
+            event_id=event_id,
+            tmin=-1,
+            tmax=0,
+            baseline=None,
+            preload=True,
+            verbose=False
+        )
 
-    for name, code in event_id.items():
+        print("\nEPOCH INFO")
+        print("Epochs created:", len(epochs))
 
-        count = (events[:, 2] == code).sum()
+    except Exception as e:
+        print("\nEPOCH ERROR:", e)
 
-        print(name, "-> Code:", code, " Count:", count)
+
+# Run for all participants
+for f in files:
+    inspect_file(f)
