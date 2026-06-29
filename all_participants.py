@@ -30,18 +30,25 @@ def get_features_labels(file_path):
     #Filtering between 1-40 hz to remove Low frequencies and Muscle Noises
     raw = raw.copy().filter(1, 40)
 
+    #Selecting only frontal EEG channels
+    channels = ["Fz", "FCz", "F2", "F3", "F4", "F6"]
+    raw = raw.pick(channels)
+
     #Creating events based on conditions present on data
     events, event_id = mne.events_from_annotations(raw)
 
     #Creating epochs - 1 second of data from start of condition
     epochs = mne.Epochs(
-        raw,
-        events,
-        event_id,
-        tmin=0,
-        tmax=1,
-        baseline=None,
-        preload=True
+    raw,
+    events,
+    event_id={
+        "condition 1": event_id["condition 1"],
+        "condition 2": event_id["condition 2"]
+    },
+    tmin=-1,
+    tmax=0,
+    baseline=None,
+    preload=True
     )
 
     # Computing PSD (Power Spectral Density) - 5 frequency bands and Power
