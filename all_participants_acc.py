@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler #Importing Scaling Methods
 from sklearn.decomposition import PCA #Importing PCA
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 
 #Importing Models
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -17,10 +18,21 @@ from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisp
 
 #For file handling
 import glob
+import os
 
 
 files = sorted(glob.glob("data/*.set"))
-print(files)
+
+def preprocess(X_train, X_test):
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    pca = PCA(n_components=0.95)
+    X_train = pca.fit_transform(X_train)
+    X_test = pca.transform(X_test)
+
+    return X_train, X_test
 
 def get_features_labels(file_path):
     
@@ -62,21 +74,10 @@ def get_features_labels(file_path):
     return X, y
 
 #FUNCTION TO RUN THE LDA MODEL----------------------
-def run_lda(X, y):
+def run_lda(X_train, X_test, y_train, y_test):
 
-    #Train and Test splits are done with 80-Train and 20-Test
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42)
-
-    #Feature Scaling using Mean and Standard Deviation
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
-
-    #Doing Principal Component Analysis to reduce dimensionality
-    pca = PCA(n_components=0.95)
-    X_train = pca.fit_transform(X_train)
-    X_test = pca.transform(X_test)
+    #Calling  Preprocessing Function
+    X_train, X_test = preprocess(X_train, X_test)
 
     #MODEL 1: LINEAR DISCRIMINANT ANALYSIS (LDA)
     model = LinearDiscriminantAnalysis()
@@ -91,21 +92,10 @@ def run_lda(X, y):
     return accuracy_score(y_test, y_pred)
 
 #FUNCTION TO RUN THE SVM MODEL----------------------
-def run_svm(X, y):
-    
-    #Train and Test splits are done with 80-Train and 20-Test
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42)
+def run_svm(X_train, X_test, y_train, y_test):
 
-    #Feature Scaling using Mean and Standard Deviation
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
-
-    #Doing Principal Component Analysis to reduce dimensionality
-    pca = PCA(n_components=0.95)
-    X_train = pca.fit_transform(X_train)
-    X_test = pca.transform(X_test)
+    #Calling Preprocessing function
+    X_train, X_test = preprocess(X_train, X_test)
 
     #MODEL 2: SUPPORT VECTOR MACHINE (SVM)
     model = SVC(kernel="linear", random_state=42)
@@ -119,53 +109,84 @@ def run_svm(X, y):
     #Accuracy
     return accuracy_score(y_test, y_pred)
 
-#MAIN CODE ------------------------------------
+#Main Code - Body
 
-#Arrays to store values of all the X and Y values to calculate total accuracy for 11 participants
-#all_X = []
-#all_y = []
+#Dictionary to store all participants
+participants = {}
 
-#Arrays to store the Accuracy scores from both models for each Participant
-lda_scores = []
-svm_scores = []
-
-#Looping through each participant to find Accuracy score
+#Reading every participant
 for file in files:
-    
-    #Printing the file being processes
+
     print("\nProcessing:", file)
 
-    #Calling function to Preprocess data and returning the preprocessed data
     X, y = get_features_labels(file)
 
-    #Adding X and Y to common variables to calcualte accuracy for all 12 participants
-    #all_X.append(X)
-    #all_y.append(y)
-    
-    #Running the LDA MODEL for One Person
-    lda_acc = run_lda(X, y)
+    participant_name = os.path.basename(file).replace("_cleaned.set", "")
 
-    #Running the SVM MODEL for One Person
-    svm_acc = run_svm(X, y)
+    participants[participant_name] = {
+        "X": X,
+        "y": y
+    }
 
-    #Printing the accuracy for both models for each person at end of 1 iteration
-    print("LDA: ", lda_acc, "\tSVM: ", svm_acc)
+    print(
+        participant_name,
+        " X Shape:", X.shape,
+        " Y Shape:", y.shape
+    )
 
-    #Adding score to the Array so that we can calculate average accuracy
-    lda_scores.append(lda_acc)
-    svm_scores.append(svm_acc)
+#Randomly Splitting Participants into Training and Testing Groups
+participant_names = list(participants.keys())
+random.seed(42)
+random.shuffle(participant_names)
 
-#Final results of both the Models 
-print("\nFinal Results")
-print("LDA Mean: ", sum(lda_scores)/len(lda_scores))
-print("SVM Mean: ", sum(svm_scores)/len(svm_scores))
+#Spliting 80% of data for data
+split = int(len(participant_names) * 0.8)
 
-#X_all = np.vstack(all_X)
-#y_all = np.concatenate(all_y)
+#80% Participants for Training
+train_subjects = participant_names[:split]
 
-#overall_lda = run_lda(X_all, y_all)
-#overall_svm = run_svm(X_all, y_all)
+#Remaining 20% Participants for Testing
+test_subjects = participant_names[split:]
 
-#print("\nCOMBINED DATASET RESULTS")
-#print("Overall LDA: ", overall_lda)
-#print("Overall SVM: ", overall_svm)
+print("\nTraining Participants:", train_subjects)
+print("Testing Participants:", test_subjects)
+
+#Combining only the Training Participants
+X_train = []
+y_train = []
+
+for participant in train_subjects:
+    X_train.append(participants[participant]["X"])
+    y_train.append(participants[participant]["y"])
+
+X_train = np.vstack(X_train)
+y_train = np.concatenate(y_train)
+
+#Combining only the Testing Participants
+X_test = []
+y_test = []
+
+for participant in test_subjects:
+    X_test.append(participants[participant]["X"])
+    y_test.append(participants[participant]["y"])
+
+X_test = np.vstack(X_test)
+y_test = np.concatenate(y_test)
+
+print("\nTraining Dataset")
+print("X Shape:", X_train.shape)
+print("Y Shape:", y_train.shape)
+
+print("\nTesting Dataset")
+print("X Shape:", X_test.shape)
+print("Y Shape:", y_test.shape)
+
+#Running LDA
+lda_acc = run_lda(X_train, X_test, y_train, y_test)
+
+#Running SVM
+svm_acc = run_svm(X_train, X_test, y_train, y_test)
+
+print("\nFINAL RESULTS")
+print("LDA Accuracy :", lda_acc)
+print("SVM Accuracy :", svm_acc)
