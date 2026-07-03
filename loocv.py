@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler #Importing Scaling Methods
 from sklearn.decomposition import PCA #Importing PCA
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 
 #Importing Models
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -17,9 +18,21 @@ from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisp
 
 #For file handling
 import glob
+import os
 
 
 files = sorted(glob.glob("data/*.set"))
+
+def preprocess(X_train, X_test):
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    pca = PCA(n_components=0.95)
+    X_train = pca.fit_transform(X_train)
+    X_test = pca.transform(X_test)
+
+    return X_train, X_test
 
 def get_features_labels(file_path):
     
@@ -29,18 +42,25 @@ def get_features_labels(file_path):
     #Filtering between 1-40 hz to remove Low frequencies and Muscle Noises
     raw = raw.copy().filter(1, 40)
 
+    #Selecting only frontal EEG channels
+    channels = ["Fz", "FCz", "F2", "F3", "F4", "F6"]
+    raw = raw.pick(channels)
+
     #Creating events based on conditions present on data
     events, event_id = mne.events_from_annotations(raw)
 
     #Creating epochs - 1 second of data from start of condition
     epochs = mne.Epochs(
-        raw,
-        events,
-        event_id,
-        tmin=0,
-        tmax=1,
-        baseline=None,
-        preload=True
+    raw,
+    events,
+    event_id={
+        "condition 1": event_id["condition 1"],
+        "condition 2": event_id["condition 2"]
+    },
+    tmin=-1,
+    tmax=0,
+    baseline=None,
+    preload=True
     )
 
     # Computing PSD (Power Spectral Density) - 5 frequency bands and Power
@@ -53,58 +73,106 @@ def get_features_labels(file_path):
 
     return X, y
 
-all_X = []
-all_y = []
+#FUNCTION TO RUN THE LDA MODEL----------------------
+def run_lda(X_train, X_test, y_train, y_test):
 
-print("\nLoading datasets...\n")
+    #Calling  Preprocessing Function
+    X_train, X_test = preprocess(X_train, X_test)
 
-for f in files:
-    X, y = get_features_labels(f)
-    all_X.append(X)
-    all_y.append(y)
+    #MODEL 1: LINEAR DISCRIMINANT ANALYSIS (LDA)
+    model = LinearDiscriminantAnalysis()
+    
+    #Training the Model
+    model.fit(X_train, y_train)
 
+    #Predicting the Y Labels on the Test Dataset
+    y_pred = model.predict(X_test)
+
+    #Accuracy
+    return accuracy_score(y_test, y_pred)
+
+#FUNCTION TO RUN THE SVM MODEL----------------------
+def run_svm(X_train, X_test, y_train, y_test):
+
+    #Calling Preprocessing function
+    X_train, X_test = preprocess(X_train, X_test)
+
+    #MODEL 2: SUPPORT VECTOR MACHINE (SVM)
+    model = SVC(kernel="linear", random_state=42)
+    
+    #Training the Model
+    model.fit(X_train, y_train)
+
+    #Predicting the Y Labels on Test Dataset
+    y_pred = model.predict(X_test)
+
+    #Accuracy
+    return accuracy_score(y_test, y_pred)
+
+#Main Code - Body
+
+#Dictionary to store all participants
+participants = {}
+
+#Reading every participant
+for file in files:
+
+    X, y = get_features_labels(file)
+
+    #Using participant names from filenames
+    participant_name = os.path.basename(file).replace("_cleaned.set", "")
+
+    #Adding the features to dictionary
+    participants[participant_name] = {
+        "X": X,
+        "y": y
+    }
 
 lda_scores = []
 svm_scores = []
 
-print("\nStarting LOOCV...\n")
+#Starting LOOCV
+for test_subject in participants:
 
-for i in range(len(all_X)):
+    print("\nTesting on:", test_subject)    
+    train_subjects = []
 
-    print("Testing Subject", i + 1, "of", len(all_X))
+    #Making the Training subjects
+    for participant in participants:
+        if participant != test_subject:
+            train_subjects.append(participant)
 
-    X_test = all_X[i]
-    y_test = all_y[i]
+    #Showing the Training Participants
+    print("Training Participants:", train_subjects)
 
-    X_train = np.concatenate([all_X[j] for j in range(len(all_X)) if j != i])
-    y_train = np.concatenate([all_y[j] for j in range(len(all_y)) if j != i])
+    #Combining only the Training Participants
+    X_train = []
+    y_train = []
 
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
+    for participant in train_subjects:
+        X_train.append(participants[participant]["X"])
+        y_train.append(participants[participant]["y"])
 
-    pca = PCA(n_components=0.95)
-    X_train = pca.fit_transform(X_train)
-    X_test = pca.transform(X_test)
+    X_train = np.vstack(X_train)
+    y_train = np.concatenate(y_train)
 
-    lda = LinearDiscriminantAnalysis()
-    lda.fit(X_train, y_train)
-    lda_pred = lda.predict(X_test)
-    lda_acc = accuracy_score(y_test, lda_pred)
+    #Testing Participant
+    X_test = participants[test_subject]["X"]
+    y_test = participants[test_subject]["y"]
 
-    svm = SVC(kernel="linear", random_state=42)
-    svm.fit(X_train, y_train)
-    svm_pred = svm.predict(X_test)
-    svm_acc = accuracy_score(y_test, svm_pred)
+    #Running LDA
+    lda_acc = run_lda(X_train, X_test, y_train, y_test)
 
-    print("LDA:", lda_acc, "| SVM:", svm_acc)
+    #Running SVM
+    svm_acc = run_svm(X_train, X_test, y_train, y_test)
 
+    print("\nLDA Accuracy :", lda_acc)
+    print("SVM Accuracy :", svm_acc)
+
+    #Saving accuracy
     lda_scores.append(lda_acc)
     svm_scores.append(svm_acc)
 
-
-print("\nLOOCV Results -----------")
-print("LDA Mean Accuracy:", np.mean(lda_scores))
-print("SVM Mean Accuracy:", np.mean(svm_scores))
-print("LDA Std Dev:", np.std(lda_scores))
-print("SVM Std Dev:", np.std(svm_scores))
+#Final Results
+print("\nAverage LDA Accuracy :", np.mean(lda_scores))
+print("\nAverage SVM Accuracy :", np.mean(svm_scores))
