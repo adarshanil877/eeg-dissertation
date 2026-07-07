@@ -49,6 +49,55 @@ def get_psd_features(epochs):
 
     return psds, psd_features
 
+def get_hjorth_features(epochs):
+
+    #Getting EEG signal data
+    data = epochs.get_data()
+
+    hjorth_features = []
+
+    #Looping through every epoch
+    for epoch in data:
+
+        epoch_features = []
+
+        #Looping through every EEG channel
+        for channel in epoch:
+
+            #First derivative - change in signal
+            first_derivative = np.diff(channel)
+
+            #Second derivative - change in the first derivative
+            second_derivative = np.diff(first_derivative)
+
+            #Hjorth Activity - variance of signal
+            activity = np.var(channel)
+
+            #Hjorth Mobility - variation of first derivative
+            mobility = np.sqrt(
+                np.var(first_derivative) / activity
+            )
+
+            #Hjorth Complexity - variation of second derivative
+            complexity = (
+                np.sqrt(
+                    np.var(second_derivative) /
+                    np.var(first_derivative)
+                )
+                / mobility
+            )
+
+            #Adding 3 Hjorth values for each channel
+            epoch_features.extend([
+                activity,
+                mobility,
+                complexity
+            ])
+
+        hjorth_features.append(epoch_features)
+
+    return np.array(hjorth_features)
+
 def get_bandpower_features(psds):
 
     #Get individual frequencies in bandpower
@@ -115,12 +164,15 @@ def get_features_labels(file_path):
     psds, psd_features = get_psd_features(epochs)
 
     #Getting Bandpower Features
-    bandpower_features = get_bandpower_features(psds)
+    #bandpower_features = get_bandpower_features(psds)
 
     #Combining PSD + Bandpower
-    X = np.concatenate((psd_features, bandpower_features), axis=1)
-    print("Feature Shape:", X.shape)
-
+    #X = np.concatenate((psd_features, bandpower_features), axis=1)
+    #print("Feature Shape:", X.shape)
+    
+    # Using only PSD (best performing so far)
+    X = psd_features
+    
     #The Y Labels
     y = epochs.events[:, -1]
 
