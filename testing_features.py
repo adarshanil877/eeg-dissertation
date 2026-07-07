@@ -37,6 +37,18 @@ def preprocess(X_train, X_test):
 
     return X_train, X_test
 
+def get_psd_features(epochs):
+
+    # Computing PSD (Power Spectral Density)
+    psds = epochs.compute_psd(method="welch", fmin=1, fmax=40)
+
+    psd_features = psds.get_data()
+
+    #Flattening the EEG data (ML Models need 2D data)
+    psd_features = psd_features.reshape(len(psd_features), -1)
+
+    return psds, psd_features
+
 def get_bandpower_features(psds):
 
     #Get individual frequencies in bandpower
@@ -69,7 +81,6 @@ def get_bandpower_features(psds):
 
     bandpower = np.concatenate(bandpower, axis=1)
     return bandpower
-
 
 def get_features_labels(file_path):
     
