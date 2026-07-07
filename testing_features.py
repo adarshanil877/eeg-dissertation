@@ -39,7 +39,7 @@ def preprocess(X_train, X_test):
 
 def get_psd_features(epochs):
 
-    # Computing PSD (Power Spectral Density)
+    # Computing PSD (Power Spectral Density) for all frequencies
     psds = epochs.compute_psd(method="welch", fmin=1, fmax=40)
 
     psd_features = psds.get_data()
@@ -119,6 +119,7 @@ def get_features_labels(file_path):
 
     #Combining PSD + Bandpower
     X = np.concatenate((psd_features, bandpower_features), axis=1)
+    print("Feature Shape:", X.shape)
 
     #The Y Labels
     y = epochs.events[:, -1]
