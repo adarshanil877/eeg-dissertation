@@ -24,15 +24,52 @@ import os
 files = sorted(glob.glob("data/*.set"))
 
 def preprocess(X_train, X_test):
+    
+    #Scaling the values
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
+    #PCA done with 95% variance
     pca = PCA(n_components=0.95)
     X_train = pca.fit_transform(X_train)
     X_test = pca.transform(X_test)
 
     return X_train, X_test
+
+def get_bandpower_features(psds):
+
+    #Get individual frequencies in bandpower
+    freqs = psds.freqs
+
+    #Getting all the PSD values
+    psd_data = psds.get_data()
+
+    #Defining the Bands to be used in Bandpower features - Standard EEG bands
+    bands = {
+        "delta": (1,4),
+        "theta": (4,8),
+        "alpha": (8,13),
+        "beta": (13,30),
+        "gamma": (30,40)
+    }
+
+    bandpower = []
+
+    #Calculating the average value for bandpower - Looping through every band's high and low values
+    for low, high in bands.values():
+        
+        idx = (freqs >= low) & (freqs < high)
+        
+        #Mean power inside each frequency band for which the condition of IDX is true
+        band = psd_data[:, :, idx].mean(axis=2)
+        
+        #Appending the power as per band into pandpower
+        bandpower.append(band)
+
+    bandpower = np.concatenate(bandpower, axis=1)
+    return bandpower
+
 
 def get_features_labels(file_path):
     
@@ -63,13 +100,17 @@ def get_features_labels(file_path):
     preload=True
     )
 
-    # Computing PSD (Power Spectral Density) - 5 frequency bands and Power
-    psds = epochs.compute_psd(method="welch", fmin=1, fmax=40)
-    X = psds.get_data()
-    y = epochs.events[:, -1]
+    #Getting PSD Features
+    psds, psd_features = get_psd_features(epochs)
 
-    #Flattening the EEG data (ML Models need 2D data)
-    X = X.reshape(len(X), -1)
+    #Getting Bandpower Features
+    bandpower_features = get_bandpower_features(psds)
+
+    #Combining PSD + Bandpower
+    X = np.concatenate((psd_features, bandpower_features), axis=1)
+
+    #The Y Labels
+    y = epochs.events[:, -1]
 
     return X, y
 
