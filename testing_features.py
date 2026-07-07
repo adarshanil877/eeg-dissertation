@@ -179,8 +179,6 @@ def get_features_labels(file_path):
     # Using only PSD (Experiment 1)
     #X = psd_features
     
-
-
     #The Y Labels
     y = epochs.events[:, -1]
 
