@@ -170,9 +170,17 @@ def get_features_labels(file_path):
     #X = np.concatenate((psd_features, bandpower_features), axis=1)
     #print("Feature Shape:", X.shape)
     
-    # Using only PSD (best performing so far)
-    X = psd_features
+    #Getting Hjorth Features (Experiment 2)
+    hjorth_features = get_hjorth_features(epochs)
+
+    #Combining PSD + Hjorth Features
+    X = np.concatenate((psd_features, hjorth_features), axis=1)
     
+    # Using only PSD (Experiment 1)
+    #X = psd_features
+    
+
+
     #The Y Labels
     y = epochs.events[:, -1]
 
