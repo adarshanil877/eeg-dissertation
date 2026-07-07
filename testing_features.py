@@ -70,15 +70,15 @@ def get_hjorth_features(epochs):
             #Second derivative - change in the first derivative
             second_derivative = np.diff(first_derivative)
 
-            #Hjorth Activity - variance of signal
+            #Computing Hjorth Activity - The fluctuation of signal
             activity = np.var(channel)
 
-            #Hjorth Mobility - variation of first derivative
+            #Hjorth Mobility - How slow or fast the waves are
             mobility = np.sqrt(
                 np.var(first_derivative) / activity
             )
 
-            #Hjorth Complexity - variation of second derivative
+            #Hjorth Complexity - how smooth or irregular the waves are
             complexity = (
                 np.sqrt(
                     np.var(second_derivative) /
