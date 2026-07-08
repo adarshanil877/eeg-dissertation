@@ -8,6 +8,7 @@ from sklearn.decomposition import PCA #Importing PCA
 import matplotlib.pyplot as plt
 import numpy as np
 import random 
+from sklearn.preprocessing import LabelEncoder
 
 #Importing Models
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -253,9 +254,11 @@ def run_xgboost(X_train, X_test, y_train, y_test):
     #Calling Preprocessing Function
     X_train, X_test = preprocess(X_train, X_test)
 
-    #XGBoost requires labels starting from 0
-    y_train = y_train - 1
-    y_test = y_test - 1
+    #Encode labels as 0 and 1
+    encoder = LabelEncoder()
+
+    y_train = encoder.fit_transform(y_train)
+    y_test = encoder.transform(y_test)
 
     #MODEL 4: XGBOOST
     model = XGBClassifier(
