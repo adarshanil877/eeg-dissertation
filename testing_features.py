@@ -1,4 +1,4 @@
-#All 12 Participants
+#LOOCV TESTING
 import mne
 mne.set_log_level("ERROR")
 
@@ -7,7 +7,6 @@ from sklearn.preprocessing import StandardScaler #Importing Scaling Methods
 from sklearn.decomposition import PCA #Importing PCA
 import matplotlib.pyplot as plt
 import numpy as np
-import random 
 from sklearn.preprocessing import LabelEncoder
 from mne_features.feature_extraction import extract_features
 
