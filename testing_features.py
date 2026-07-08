@@ -7,8 +7,7 @@ from sklearn.preprocessing import StandardScaler #Importing Scaling Methods
 from sklearn.decomposition import PCA #Importing PCA
 import matplotlib.pyplot as plt
 import numpy as np
-import random
-from mne.decoding import CSP 
+import random 
 
 #Importing Models
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -49,23 +48,6 @@ def get_psd_features(epochs):
     psd_features = psd_features.reshape(len(psd_features), -1)
 
     return psds, psd_features
-
-def get_csp_features(epochs, y):
-
-    #Getting EEG signal data
-    data = epochs.get_data()
-
-    #Creating CSP model
-    csp = CSP(
-        n_components=6,
-        log=True,
-        norm_trace=False
-    )
-
-    #Learning spatial filters and extracting features
-    csp_features = csp.fit_transform(data, y)
-
-    return csp_features
 
 def get_hjorth_features(epochs):
 
@@ -185,7 +167,7 @@ def get_features_labels(file_path):
     y = epochs.events[:, -1]
     
     # Using only PSD (Experiment 1)
-    #X = psd_features
+    X = psd_features
 
     #Getting Bandpower Features (Experiment 2)
     #bandpower_features = get_bandpower_features(psds)
@@ -197,10 +179,10 @@ def get_features_labels(file_path):
     #Combining PSD + Hjorth Features
     #X = np.concatenate((psd_features, hjorth_features), axis=1)
     
-    #Getting CSP Features (Experiment 4)
-    csp_features = get_csp_features(epochs, y)
+    #Getting CSP Features (Experiment 4 - Experimental and wrong)
+    #csp_features = get_csp_features(epochs, y)
     #Combining PSD + CSP
-    X = np.concatenate((psd_features,csp_features), axis=1)
+    #X = np.concatenate((psd_features,csp_features), axis=1)
     
     print("Feature Shape:", X.shape)
 
