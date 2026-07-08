@@ -226,7 +226,6 @@ def run_svm(X_train, X_test, y_train, y_test):
     return accuracy_score(y_test, y_pred)
 
 #FUNCTION TO RUN THE RANDOM FOREST MODEL----------------------
-
 def run_random_forest(X_train, X_test, y_train, y_test):
 
     #Calling Preprocessing Function
@@ -234,7 +233,7 @@ def run_random_forest(X_train, X_test, y_train, y_test):
 
     #MODEL 3: RANDOM FOREST
     model = RandomForestClassifier(
-        n_estimators=200,
+        n_estimators=50,
         random_state=42
     )
 
