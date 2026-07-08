@@ -154,7 +154,7 @@ def get_features_labels(file_path):
         "condition 1": event_id["condition 1"],
         "condition 2": event_id["condition 2"]
     },
-    tmin=-0.75,
+    tmin=-1.2,
     tmax=0,
     baseline=None,
     preload=True
