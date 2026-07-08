@@ -154,7 +154,7 @@ def get_features_labels(file_path):
         "condition 1": event_id["condition 1"],
         "condition 2": event_id["condition 2"]
     },
-    tmin=-1.2,
+    tmin=-0.9,
     tmax=0,
     baseline=None,
     preload=True
@@ -184,7 +184,7 @@ def get_features_labels(file_path):
     #Combining PSD + CSP
     #X = np.concatenate((psd_features,csp_features), axis=1)
     
-    print("Feature Shape:", X.shape)
+    #print("Feature Shape:", X.shape)
 
     return X, y
 
