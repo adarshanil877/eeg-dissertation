@@ -12,6 +12,7 @@ import random
 #Importing Models
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
 
 #Importing Evaluation Metrics
 from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay
@@ -215,6 +216,28 @@ def run_svm(X_train, X_test, y_train, y_test):
     #MODEL 2: SUPPORT VECTOR MACHINE (SVM)
     model = SVC(kernel="linear", random_state=42)
     
+    #Training the Model
+    model.fit(X_train, y_train)
+
+    #Predicting the Y Labels on Test Dataset
+    y_pred = model.predict(X_test)
+
+    #Accuracy
+    return accuracy_score(y_test, y_pred)
+
+#FUNCTION TO RUN THE RANDOM FOREST MODEL----------------------
+
+def run_random_forest(X_train, X_test, y_train, y_test):
+
+    #Calling Preprocessing Function
+    X_train, X_test = preprocess(X_train, X_test)
+
+    #MODEL 3: RANDOM FOREST
+    model = RandomForestClassifier(
+        n_estimators=100,
+        random_state=42
+    )
+
     #Training the Model
     model.fit(X_train, y_train)
 
