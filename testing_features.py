@@ -13,6 +13,7 @@ import random
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
 
 #Importing Evaluation Metrics
 from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay
@@ -246,6 +247,35 @@ def run_random_forest(X_train, X_test, y_train, y_test):
     #Accuracy
     return accuracy_score(y_test, y_pred)
 
+#FUNCTION TO RUN THE XGBOOST MODEL----------------------
+def run_xgboost(X_train, X_test, y_train, y_test):
+
+    #Calling Preprocessing Function
+    X_train, X_test = preprocess(X_train, X_test)
+
+    #XGBoost requires labels starting from 0
+    y_train = y_train - 1
+    y_test = y_test - 1
+
+    #MODEL 4: XGBOOST
+    model = XGBClassifier(
+        n_estimators=100,
+        max_depth=6,
+        learning_rate=0.1,
+        random_state=42,
+        eval_metric="logloss"
+    )
+
+    #Training the Model
+    model.fit(X_train, y_train)
+
+    #Predicting the Y Labels
+    y_pred = model.predict(X_test)
+
+    #Accuracy
+    return accuracy_score(y_test, y_pred)
+
+
 #Main Code - Body
 
 #Dictionary to store all participants
@@ -268,6 +298,7 @@ for file in files:
 lda_scores = []
 svm_scores = []
 rf_scores =[]
+xgb_scores = []
 
 #Starting LOOCV
 for test_subject in participants:
@@ -307,17 +338,23 @@ for test_subject in participants:
     #Running Random Forest
     rf_acc = run_random_forest(X_train, X_test, y_train, y_test)
 
+    #Running XGBoost
+    xgb_acc = run_xgboost(X_train, X_test, y_train, y_test)
+
     print("\nLDA Accuracy :", lda_acc)
     print("SVM Accuracy :", svm_acc)
     print("Random Forest Accuracy :", rf_acc)
+    print("XGBoost Accuracy :", xgb_acc)
 
     #Saving accuracy
     lda_scores.append(lda_acc)
     svm_scores.append(svm_acc)
     rf_scores.append(rf_acc)
+    xgb_scores.append(xgb_acc)
 
 #Final Results
 print("\n Final Results")
 print("\nAverage LDA Accuracy :", np.mean(lda_scores))
 print("\nAverage SVM Accuracy :", np.mean(svm_scores))
 print("\nAverage Random Forest Accuracy :", np.mean(rf_scores))
+print("\nAverage XGBoost Accuracy :", np.mean(xgb_scores))
