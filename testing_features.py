@@ -268,6 +268,7 @@ for file in files:
 
 lda_scores = []
 svm_scores = []
+rf_scores =[]
 
 #Starting LOOCV
 for test_subject in participants:
@@ -304,13 +305,19 @@ for test_subject in participants:
     #Running SVM
     svm_acc = run_svm(X_train, X_test, y_train, y_test)
 
+    #Running Random Forest
+    rf_acc = run_random_forest(X_train, X_test, y_train, y_test)
+
     print("\nLDA Accuracy :", lda_acc)
-    print("SVM Accuracy :", svm_acc)
+    print("\nSVM Accuracy :", svm_acc)
+    print("\nRandom Forest Accuracy :", rf_acc)
 
     #Saving accuracy
     lda_scores.append(lda_acc)
     svm_scores.append(svm_acc)
+    rf_scores.append(rf_acc)
 
 #Final Results
 print("\nAverage LDA Accuracy :", np.mean(lda_scores))
 print("\nAverage SVM Accuracy :", np.mean(svm_scores))
+print("\nAverage Random Forest Accuracy :", np.mean(rf_scores))
