@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random 
 from sklearn.preprocessing import LabelEncoder
+from mne_features.feature_extraction import extract_features
 
 #Importing Models
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -134,6 +135,29 @@ def get_bandpower_features(psds):
     bandpower = np.concatenate(bandpower, axis=1)
     return bandpower
 
+def get_mne_features(epochs):
+
+    #Getting EEG signal data
+    data = epochs.get_data()
+
+    #Extracting MNE Features
+    features = extract_features(
+        data,
+        sfreq=epochs.info["sfreq"],
+        selected_funcs=[
+            "mean",
+            "variance",
+            "std",
+            "kurtosis",
+            "skewness",
+            "line_length",
+            "hjorth_mobility",
+            "hjorth_complexity"
+        ]
+    )
+
+    return features
+
 def get_features_labels(file_path):
     
     #Reading the data from EEG data using MNE
@@ -170,7 +194,7 @@ def get_features_labels(file_path):
     y = epochs.events[:, -1]
     
     # Using only PSD (Experiment 1)
-    X = psd_features
+    #X = psd_features
 
     #Getting Bandpower Features (Experiment 2)
     #bandpower_features = get_bandpower_features(psds)
@@ -186,8 +210,12 @@ def get_features_labels(file_path):
     #csp_features = get_csp_features(epochs, y)
     #Combining PSD + CSP
     #X = np.concatenate((psd_features,csp_features), axis=1)
+
+    #MNE Features (Experiment 5)
+    mne_features = get_mne_features(epochs)
+    X = mne_features
     
-    #print("Feature Shape:", X.shape)
+    print("Feature Shape:", X.shape)
 
     return X, y
 
