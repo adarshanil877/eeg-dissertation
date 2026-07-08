@@ -234,7 +234,7 @@ def run_random_forest(X_train, X_test, y_train, y_test):
 
     #MODEL 3: RANDOM FOREST
     model = RandomForestClassifier(
-        n_estimators=100,
+        n_estimators=200,
         random_state=42
     )
 
