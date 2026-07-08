@@ -30,7 +30,7 @@ def preprocess(X_train, X_test):
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
-    #PCA done with 95% variance
+    #PCA done with 90% variance
     pca = PCA(n_components=0.90)
     X_train = pca.fit_transform(X_train)
     X_test = pca.transform(X_test)
@@ -154,7 +154,7 @@ def get_features_labels(file_path):
         "condition 1": event_id["condition 1"],
         "condition 2": event_id["condition 2"]
     },
-    tmin=-1,
+    tmin=-0.75,
     tmax=0,
     baseline=None,
     preload=True
