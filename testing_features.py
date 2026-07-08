@@ -144,14 +144,16 @@ def get_mne_features(epochs):
         data,
         sfreq=epochs.info["sfreq"],
         selected_funcs=[
-            "mean",
-            "variance",
-            "std",
-            "kurtosis",
-            "skewness",
-            "line_length",
-            "hjorth_mobility",
-            "hjorth_complexity"
+        "line_length",
+        "kurtosis",
+        "skewness",
+        "hjorth_mobility",
+        "hjorth_complexity",
+        "zero_crossings",
+        "spect_entropy",
+        "svd_entropy",
+        "app_entropy",
+        "samp_entropy"
         ]
     )
 
