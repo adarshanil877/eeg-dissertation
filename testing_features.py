@@ -213,8 +213,10 @@ def get_features_labels(file_path):
 
     #MNE Features (Experiment 5)
     mne_features = get_mne_features(epochs)
-    X = mne_features
-    
+    #X = mne_features
+    #Combining PSD + MNE Features (Experiment 6)
+    X = np.concatenate((psd_features, mne_features), axis=1)
+
     print("Feature Shape:", X.shape)
 
     return X, y
