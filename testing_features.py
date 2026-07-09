@@ -37,7 +37,7 @@ def preprocess(X_train, X_test):
     X_test = scaler.transform(X_test)
 
     #PCA done with 90% variance
-    pca = PCA(n_components=0.95)
+    pca = PCA(n_components=0.90)
     X_train = pca.fit_transform(X_train)
     X_test = pca.transform(X_test)
 
