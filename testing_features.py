@@ -2,6 +2,8 @@
 import mne
 mne.set_log_level("ERROR")
 
+import time
+
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler #Importing Scaling Methods
 from sklearn.decomposition import PCA #Importing PCA
@@ -311,6 +313,7 @@ def run_xgboost(X_train, X_test, y_train, y_test):
 
 
 #Main Code - Body
+start_time = time.time()
 
 #Dictionary to store all participants
 participants = {}
@@ -392,3 +395,8 @@ print("\nAverage LDA Accuracy :", np.mean(lda_scores))
 print("\nAverage SVM Accuracy :", np.mean(svm_scores))
 print("\nAverage Random Forest Accuracy :", np.mean(rf_scores))
 print("\nAverage XGBoost Accuracy :", np.mean(xgb_scores))
+
+end_time = time.time()
+runtime = end_time - start_time
+print(f"\nTotal Runtime: {runtime:.2f} seconds")
+print(f"Total Runtime: {runtime/60:.2f} minutes")
