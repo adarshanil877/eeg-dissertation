@@ -197,22 +197,22 @@ def get_features_labels(file_path):
     y = epochs.events[:, -1]
     
     #Stuff for previous count - Adding one if the labed is event id conditon 1
-    previous_correct = []
-    count = 0
+    # previous_correct = []
+    # count = 0
 
-    for label in y:
+    # for label in y:
 
-        previous_correct.append(count)
+    #     previous_correct.append(count)
 
-        #Writing for condition 1 - Correct condition - Increase count by 1
-        if label == event_id["condition 1"]:
-            count += 1
+    #     #Writing for condition 1 - Correct condition - Increase count by 1
+    #     if label == event_id["condition 1"]:
+    #         count += 1
 
-        #Writing for condition 2 - Incorrect Condition
-        elif label == event_id["condition 2"]:
-            count = 0
+    #     #Writing for condition 2 - Incorrect Condition
+    #     elif label == event_id["condition 2"]:
+    #         count = 0
 
-    previous_correct = np.array(previous_correct).reshape(-1,1)
+    # previous_correct = np.array(previous_correct).reshape(-1,1)
 
     
     # Using only PSD (Experiment 1)
@@ -237,7 +237,10 @@ def get_features_labels(file_path):
     mne_features = get_mne_features(epochs)
     #X = mne_features
     #Combining PSD + MNE Features (Experiment 6)
-    X = np.concatenate((psd_features, mne_features, previous_correct), axis=1)
+    X = np.concatenate((psd_features, mne_features), axis=1)
+
+    #Using the number of correct previous answers (Experiment 7)
+    #X = np.concatenate((psd_features, mne_features, previous_correct), axis=1)
 
     print("Feature Shape:", X.shape)
 
