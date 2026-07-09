@@ -1,6 +1,6 @@
 #LOOCV TESTING
+
 import mne
-mne.set_log_level("ERROR")
 
 import time
 
@@ -25,7 +25,7 @@ from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisp
 import glob
 import os
 
-
+mne.set_log_level("ERROR")
 files = sorted(glob.glob("data/*.set"))
 
 def preprocess(X_train, X_test):
