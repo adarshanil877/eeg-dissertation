@@ -19,7 +19,7 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 
 #Importing Evaluation Metrics
-from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay, roc_auc_score
 
 #For file handling
 import glob
@@ -237,10 +237,14 @@ def run_lda(X_train, X_test, y_train, y_test):
     model.fit(X_train, y_train)
 
     #Predicting the Y Labels on the Test Dataset
-    y_pred = model.predict(X_test)
+    y_prob = model.predict_proba(X_test)[:,1]
 
     #Accuracy
-    return accuracy_score(y_test, y_pred)
+    #return accuracy_score(y_test, y_pred)
+
+    #AUC-ROC Score
+    auc = roc_auc_score(y_test, y_prob)
+    return auc
 
 #FUNCTION TO RUN THE SVM MODEL----------------------
 def run_svm(X_train, X_test, y_train, y_test):
@@ -249,16 +253,20 @@ def run_svm(X_train, X_test, y_train, y_test):
     X_train, X_test = preprocess(X_train, X_test)
 
     #MODEL 2: SUPPORT VECTOR MACHINE (SVM)
-    model = SVC(kernel="linear", random_state=42)
+    model = SVC(kernel="linear", probability=True, random_state=42)
     
     #Training the Model
     model.fit(X_train, y_train)
 
     #Predicting the Y Labels on Test Dataset
-    y_pred = model.predict(X_test)
+    y_prob = model.predict_proba(X_test)[:,1]
 
     #Accuracy
-    return accuracy_score(y_test, y_pred)
+    #return accuracy_score(y_test, y_pred)
+
+    #Return AUC-ROC Score
+    auc = roc_auc_score(y_test, y_prob)
+    return auc
 
 #FUNCTION TO RUN THE RANDOM FOREST MODEL----------------------
 def run_random_forest(X_train, X_test, y_train, y_test):
@@ -276,10 +284,14 @@ def run_random_forest(X_train, X_test, y_train, y_test):
     model.fit(X_train, y_train)
 
     #Predicting the Y Labels on Test Dataset
-    y_pred = model.predict(X_test)
+    y_prob = model.predict_proba(X_test)[:,1]
 
     #Accuracy
-    return accuracy_score(y_test, y_pred)
+    #return accuracy_score(y_test, y_pred)
+
+    #Return AUC-ROC Score
+    auc = roc_auc_score(y_test, y_prob)
+    return auc
 
 #FUNCTION TO RUN THE XGBOOST MODEL----------------------
 def run_xgboost(X_train, X_test, y_train, y_test):
@@ -306,10 +318,14 @@ def run_xgboost(X_train, X_test, y_train, y_test):
     model.fit(X_train, y_train)
 
     #Predicting the Y Labels
-    y_pred = model.predict(X_test)
+    y_prob = model.predict_proba(X_test)[:,1]
 
     #Accuracy
-    return accuracy_score(y_test, y_pred)
+    #return accuracy_score(y_test, y_pred)
+
+    #Return AUC-ROC Score
+    auc = roc_auc_score(y_test, y_prob)
+    return auc
 
 
 #Main Code - Body
@@ -378,10 +394,10 @@ for test_subject in participants:
     #Running XGBoost
     xgb_acc = run_xgboost(X_train, X_test, y_train, y_test)
 
-    print("\nLDA Accuracy :", lda_acc)
-    print("SVM Accuracy :", svm_acc)
-    print("Random Forest Accuracy :", rf_acc)
-    print("XGBoost Accuracy :", xgb_acc)
+    print("\nLDA AUC :", lda_acc)
+    print("SVM AUC :", svm_acc)
+    print("Random Forest AUC :", rf_acc)
+    print("XGBoost AUC :", xgb_acc)
 
     #Saving accuracy
     lda_scores.append(lda_acc)
@@ -391,10 +407,10 @@ for test_subject in participants:
 
 #Final Results
 print("\n Final Results")
-print("\nAverage LDA Accuracy :", np.mean(lda_scores))
-print("\nAverage SVM Accuracy :", np.mean(svm_scores))
-print("\nAverage Random Forest Accuracy :", np.mean(rf_scores))
-print("\nAverage XGBoost Accuracy :", np.mean(xgb_scores))
+print("\nAverage LDA AUC :", np.mean(lda_scores))
+print("\nAverage SVM AUC :", np.mean(svm_scores))
+print("\nAverage Random Forest AUC :", np.mean(rf_scores))
+print("\nAverage XGBoost AUC :", np.mean(xgb_scores))
 
 end_time = time.time()
 runtime = end_time - start_time
