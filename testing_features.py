@@ -1,7 +1,6 @@
 #LOOCV TESTING
 
 import mne
-
 import time
 
 from sklearn.model_selection import train_test_split
@@ -11,6 +10,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from mne_features.feature_extraction import extract_features
+import shap
+import pandas as pd
 
 #Importing Models
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
