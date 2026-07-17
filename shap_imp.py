@@ -314,7 +314,7 @@ def run_random_forest(X_train, X_test, y_train, y_test):
 
     #Return AUC-ROC Score
     auc = roc_auc_score(y_test, y_prob)
-    return auc
+    return auc, model, X_train
 
 #FUNCTION TO RUN THE XGBOOST MODEL----------------------
 def run_xgboost(X_train, X_test, y_train, y_test):
@@ -406,27 +406,42 @@ for test_subject in participants:
     y_test = participants[test_subject]["y"]
 
     #Running LDA
-    lda_acc = run_lda(X_train, X_test, y_train, y_test)
+    #lda_acc = run_lda(X_train, X_test, y_train, y_test)
 
     #Running SVM
-    svm_acc = run_svm(X_train, X_test, y_train, y_test)
+    #svm_acc = run_svm(X_train, X_test, y_train, y_test)
 
     #Running Random Forest
-    rf_acc = run_random_forest(X_train, X_test, y_train, y_test)
+    rf_acc, rf_model, rf_train = run_random_forest(X_train, X_test, y_train, y_test)
 
     #Running XGBoost
-    xgb_acc = run_xgboost(X_train, X_test, y_train, y_test)
+    #xgb_acc = run_xgboost(X_train, X_test, y_train, y_test)
 
     #print("\nLDA AUC :", lda_acc)
     #print("SVM AUC :", svm_acc)
     print("Random Forest AUC :", rf_acc)
     #print("XGBoost AUC :", xgb_acc)
 
+    if test_subject == "c01":
+
+        explainer = shap.TreeExplainer(rf_model)
+
+        shap_values = explainer.shap_values(rf_train)
+
+        shap.summary_plot(
+            shap_values,
+            rf_train,
+            show=False
+        )
+
+        plt.savefig("shap_summary.png", dpi=300)
+        plt.close()
+
     #Saving accuracy
-    lda_scores.append(lda_acc)
-    svm_scores.append(svm_acc)
+    #lda_scores.append(lda_acc)
+    #svm_scores.append(svm_acc)
     rf_scores.append(rf_acc)
-    xgb_scores.append(xgb_acc)
+    #xgb_scores.append(xgb_acc)
 
 #Final Results
 print("\n Final Results")
