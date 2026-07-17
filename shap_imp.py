@@ -424,9 +424,13 @@ for test_subject in participants:
 
     if test_subject == "c01":
 
+        print("rf_train shape:", rf_train.shape)
         explainer = shap.TreeExplainer(rf_model)
 
         shap_values = explainer.shap_values(rf_test)
+
+        print("RF train shape:", rf_train.shape)
+        print("SHAP shape:", shap_values.values.shape)
 
         shap.summary_plot(
             shap_values,
