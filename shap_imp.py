@@ -314,7 +314,7 @@ def run_random_forest(X_train, X_test, y_train, y_test):
 
     #Return AUC-ROC Score
     auc = roc_auc_score(y_test, y_prob)
-    return auc, model, X_train
+    return auc, model, X_train, X_test
 
 #FUNCTION TO RUN THE XGBOOST MODEL----------------------
 def run_xgboost(X_train, X_test, y_train, y_test):
@@ -412,7 +412,7 @@ for test_subject in participants:
     #svm_acc = run_svm(X_train, X_test, y_train, y_test)
 
     #Running Random Forest
-    rf_acc, rf_model, rf_train = run_random_forest(X_train, X_test, y_train, y_test)
+    rf_acc, rf_model, rf_train, rf_test = run_random_forest(X_train, X_test, y_train, y_test)
 
     #Running XGBoost
     #xgb_acc = run_xgboost(X_train, X_test, y_train, y_test)
@@ -426,11 +426,11 @@ for test_subject in participants:
 
         explainer = shap.TreeExplainer(rf_model)
 
-        shap_values = explainer.shap_values(rf_train)
+        shap_values = explainer.shap_values(rf_test)
 
         shap.summary_plot(
             shap_values,
-            rf_train,
+            rf_test,
             show=False
         )
 
