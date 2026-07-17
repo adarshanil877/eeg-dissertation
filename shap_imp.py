@@ -417,10 +417,10 @@ for test_subject in participants:
     #Running XGBoost
     xgb_acc = run_xgboost(X_train, X_test, y_train, y_test)
 
-    print("\nLDA AUC :", lda_acc)
-    print("SVM AUC :", svm_acc)
+    #print("\nLDA AUC :", lda_acc)
+    #print("SVM AUC :", svm_acc)
     print("Random Forest AUC :", rf_acc)
-    print("XGBoost AUC :", xgb_acc)
+    #print("XGBoost AUC :", xgb_acc)
 
     #Saving accuracy
     lda_scores.append(lda_acc)
@@ -430,10 +430,10 @@ for test_subject in participants:
 
 #Final Results
 print("\n Final Results")
-print("\nAverage LDA AUC :", np.mean(lda_scores))
-print("\nAverage SVM AUC :", np.mean(svm_scores))
+#print("\nAverage LDA AUC :", np.mean(lda_scores))
+#print("\nAverage SVM AUC :", np.mean(svm_scores))
 print("\nAverage Random Forest AUC :", np.mean(rf_scores))
-print("\nAverage XGBoost AUC :", np.mean(xgb_scores))
+#print("\nAverage XGBoost AUC :", np.mean(xgb_scores))
 
 end_time = time.time()
 runtime = end_time - start_time
