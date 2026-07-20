@@ -436,12 +436,15 @@ for test_subject in participants:
         print(np.array(shap_values).shape)
         print(rf_test.shape)
         
-        shap.summary_plot(
-            shap_values,
-            rf_test,
-            show=False
-        )
+        # Use SHAP values for class 1 (Correct)
+        shap_values_class1 = shap_values[:, :, 1]
 
+        shap.summary_plot(
+        shap_values_class1,
+        rf_test,
+        show=False
+        )
+        
         plt.savefig("shap_summary.png", dpi=300)
         plt.close()
 
