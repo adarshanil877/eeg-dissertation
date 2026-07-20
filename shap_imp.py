@@ -430,8 +430,12 @@ for test_subject in participants:
         shap_values = explainer.shap_values(rf_test)
 
         print("RF train shape:", rf_train.shape)
-        print("SHAP shape:", shap_values.values.shape)
+        print("SHAP shape:", shap_values.shape)
 
+        print(type(shap_values))
+        print(np.array(shap_values).shape)
+        print(rf_test.shape)
+        
         shap.summary_plot(
             shap_values,
             rf_test,
