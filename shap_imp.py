@@ -243,9 +243,40 @@ def get_features_labels(file_path):
     #Using the number of correct previous answers (Experiment 7)
     #X = np.concatenate((psd_features, mne_features, previous_correct), axis=1)
 
+    #Creating names for every feature
+    feature_names = []
+
+    #PSD feature names
+    freqs = psds.freqs
+
+    for channel in channels:
+        for frequency in freqs:
+            feature_names.append(
+                "PSD_" + channel + "_" + str(round(frequency, 1)) + "Hz"
+            )
+
+    #Names of the MNE features
+    mne_feature_names = [
+        "line_length",
+        "kurtosis",
+        "skewness",
+        "hjorth_mobility",
+        "hjorth_complexity",
+        "zero_crossings",
+        "spect_entropy",
+        "svd_entropy",
+        "app_entropy",
+        "samp_entropy"
+    ]
+
+    #Adding the channel name to every MNE feature
+    for feature in mne_feature_names:
+        for channel in channels:
+            feature_names.append(feature + "_" + channel)
+
     print("Feature Shape:", X.shape)
 
-    return X, y
+    return X, y, feature_names
 
 #FUNCTION TO RUN THE LDA MODEL----------------------
 def run_lda(X_train, X_test, y_train, y_test):
@@ -360,7 +391,7 @@ participants = {}
 #Reading every participant
 for file in files:
 
-    X, y = get_features_labels(file)
+    X, y, feature_names = get_features_labels(file)
 
     #Using participant names from filenames
     participant_name = os.path.basename(file).replace("_cleaned.set", "")
@@ -368,7 +399,8 @@ for file in files:
     #Adding the features to dictionary
     participants[participant_name] = {
         "X": X,
-        "y": y
+        "y": y,
+        "feature_names": feature_names
     }
 
 lda_scores = []
@@ -439,8 +471,8 @@ for test_subject in participants:
         #Mean SHAP importance
         importance = np.abs(shap_values_class1).mean(axis=0)
 
-        #Temporary feature names
-        feature_names = [f"Feature_{i}" for i in range(rf_test.shape[1])]
+        #Feature Names
+        feature_names = participants[test_subject]["feature_names"]
 
         #Dataframe is created for saving the SHAP Values
         shap_table = pd.DataFrame({
