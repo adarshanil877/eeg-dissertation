@@ -236,6 +236,7 @@ def get_features_labels(file_path):
 
     #MNE Features (Experiment 5)
     mne_features = get_mne_features(epochs)
+
     #X = mne_features
     #Combining PSD + MNE Features (Experiment 6)
     X = np.concatenate((psd_features, mne_features), axis=1)
@@ -255,7 +256,7 @@ def get_features_labels(file_path):
                 "PSD_" + channel + "_" + str(round(frequency, 1)) + "Hz"
             )
 
-    #Names of the MNE features
+   #Names of the MNE features
     mne_feature_names = [
         "line_length",
         "kurtosis",
@@ -269,10 +270,10 @@ def get_features_labels(file_path):
         "samp_entropy"
     ]
 
-    #Adding the channel name to every MNE feature
-    for feature in mne_feature_names:
-        for channel in channels:
-            feature_names.append(feature + "_" + channel)
+    #Adding the feature name for every channel
+    for channel in channels:
+        for feature in mne_feature_names:
+            feature_names.append(channel + "_" + feature)
 
     print("Feature Shape:", X.shape)
 
@@ -501,8 +502,8 @@ for test_subject in participants:
             show=False
         )
 
-    plt.savefig("shap_summary.png", dpi=300)
-    plt.close()
+        plt.savefig("shap_summary.png", dpi=300)
+        plt.close()
 
     #Saving accuracy
     #lda_scores.append(lda_acc)
