@@ -438,7 +438,7 @@ for file in files:
 
 selected_indices = load_top_features(
     feature_names,
-    n_features=5
+    n_features=120
 )
 
 lda_scores = []
