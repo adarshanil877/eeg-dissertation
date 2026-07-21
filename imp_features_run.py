@@ -16,6 +16,7 @@ import pandas as pd
 #Importing Models
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.svm import SVC
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 
@@ -339,8 +340,15 @@ def run_svm(X_train, X_test, y_train, y_test):
     #Calling Preprocessing function
     X_train, X_test = preprocess(X_train, X_test)
 
-    #MODEL 2: SUPPORT VECTOR MACHINE (SVM)
-    model = SVC(kernel="linear", probability=True, random_state=42)
+    #MODEL 2: SUPPORT VECTOR MACHINE (SVM) - new way because of changed versions
+    svm = SVC(kernel="linear", random_state=42)
+    
+    #Calibration to get probabilities
+    model = CalibratedClassifierCV(
+        svm,
+        method="sigmoid",
+        cv=5
+    )
     
     #Training the Model
     model.fit(X_train, y_train)
@@ -436,9 +444,11 @@ for file in files:
         "feature_names": feature_names
     }
 
+
+#TO SELECT NUMBER OF FEATURES
 selected_indices = load_top_features(
     feature_names,
-    n_features=15
+    n_features=10
 )
 
 lda_scores = []
