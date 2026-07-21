@@ -271,8 +271,8 @@ def get_features_labels(file_path):
     ]
 
     #Adding the feature name for every channel
-    for channel in channels:
-        for feature in mne_feature_names:
+    for feature in mne_feature_names:
+        for channel in channels:
             feature_names.append(channel + "_" + feature)
 
     print("Feature Shape:", X.shape)
@@ -408,6 +408,7 @@ lda_scores = []
 svm_scores = []
 rf_scores =[]
 xgb_scores = []
+all_shap_values = []
 
 #Starting LOOCV
 for test_subject in participants:
@@ -455,7 +456,7 @@ for test_subject in participants:
     print("Random Forest AUC :", rf_acc)
     #print("XGBoost AUC :", xgb_acc)
 
-    if test_subject == "c02":
+    if True:
 
         print("rf_train shape:", rf_train.shape)
 
@@ -472,12 +473,15 @@ for test_subject in participants:
         #Mean SHAP importance
         importance = np.abs(shap_values_class1).mean(axis=0)
 
+        #Appending Importance of SHAP to variable
+        all_shap_values.append(importance)
+
         #Feature Names
-        feature_names = participants[test_subject]["feature_names"]
+        current_feature_names = participants[test_subject]["feature_names"]
 
         #Dataframe is created for saving the SHAP Values
         shap_table = pd.DataFrame({
-            "Feature": feature_names,
+            "Feature": current_feature_names,
             "Mean_SHAP": importance
         })
 
@@ -492,13 +496,16 @@ for test_subject in participants:
         print(shap_table.head(20))
 
         #CSV of SHAP Features
-        shap_table.to_csv("shap_importance.csv", index=False)
+        shap_table.to_csv(
+            "shap_" + test_subject + "_importance.csv",
+            index=False
+        )
 
         #SHAP Graph
         shap.summary_plot(
             shap_values_class1,
             rf_test,
-            feature_names=feature_names,
+            feature_names=current_feature_names,
             show=False
         )
 
@@ -510,6 +517,28 @@ for test_subject in participants:
     #svm_scores.append(svm_acc)
     rf_scores.append(rf_acc)
     #xgb_scores.append(xgb_acc)
+
+# Average SHAP importance across all participants
+
+average_shap = np.mean(all_shap_values, axis=0)
+
+feature_importance = pd.DataFrame({
+    "Feature": feature_names,
+    "Mean_SHAP": average_shap
+})
+
+feature_importance = feature_importance.sort_values(
+    by="Mean_SHAP",
+    ascending=False
+)
+
+print("\nOverall Top Features")
+print(feature_importance.head(20))
+
+feature_importance.to_csv(
+    "overall_shap_importance.csv",
+    index=False
+)
 
 #Final Results
 print("\n Final Results")
