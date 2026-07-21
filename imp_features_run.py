@@ -438,7 +438,7 @@ for file in files:
 
 selected_indices = load_top_features(
     feature_names,
-    n_features=120
+    n_features=15
 )
 
 lda_scores = []
@@ -483,34 +483,34 @@ for test_subject in participants:
     y_test = participants[test_subject]["y"]
 
     #Running LDA
-    #lda_acc = run_lda(X_train, X_test, y_train, y_test)
+    lda_acc = run_lda(X_train, X_test, y_train, y_test)
 
     #Running SVM
-    #svm_acc = run_svm(X_train, X_test, y_train, y_test)
+    svm_acc = run_svm(X_train, X_test, y_train, y_test)
 
     #Running Random Forest
     rf_acc, rf_model, rf_train, rf_test = run_random_forest(X_train, X_test, y_train, y_test)
 
     #Running XGBoost
-    #xgb_acc = run_xgboost(X_train, X_test, y_train, y_test)
+    xgb_acc = run_xgboost(X_train, X_test, y_train, y_test)
 
-    #print("\nLDA AUC :", lda_acc)
-    #print("SVM AUC :", svm_acc)
+    print("\nLDA AUC :", lda_acc)
+    print("SVM AUC :", svm_acc)
     print("Random Forest AUC :", rf_acc)
-    #print("XGBoost AUC :", xgb_acc)
+    print("XGBoost AUC :", xgb_acc)
 
     #Saving accuracy
-    #lda_scores.append(lda_acc)
-    #svm_scores.append(svm_acc)
+    lda_scores.append(lda_acc)
+    svm_scores.append(svm_acc)
     rf_scores.append(rf_acc)
-    #xgb_scores.append(xgb_acc)
+    xgb_scores.append(xgb_acc)
 
 #Final Results
 print("\n Final Results")
-#print("\nAverage LDA AUC :", np.mean(lda_scores))
-#print("\nAverage SVM AUC :", np.mean(svm_scores))
+print("\nAverage LDA AUC :", np.mean(lda_scores))
+print("\nAverage SVM AUC :", np.mean(svm_scores))
 print("\nAverage Random Forest AUC :", np.mean(rf_scores))
-#print("\nAverage XGBoost AUC :", np.mean(xgb_scores))
+print("\nAverage XGBoost AUC :", np.mean(xgb_scores))
 
 end_time = time.time()
 runtime = end_time - start_time
