@@ -455,7 +455,7 @@ for test_subject in participants:
     print("Random Forest AUC :", rf_acc)
     #print("XGBoost AUC :", xgb_acc)
 
-    if test_subject == "c01":
+    if test_subject == "c02":
 
         print("rf_train shape:", rf_train.shape)
 
