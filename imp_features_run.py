@@ -448,7 +448,7 @@ for file in files:
 #TO SELECT NUMBER OF FEATURES
 selected_indices = load_top_features(
     feature_names,
-    n_features=5
+    n_features=75
 )
 
 lda_scores = []
