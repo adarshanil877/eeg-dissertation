@@ -425,6 +425,7 @@ for test_subject in participants:
     if test_subject == "c01":
 
         print("rf_train shape:", rf_train.shape)
+
         explainer = shap.TreeExplainer(rf_model)
 
         shap_values = explainer.shap_values(rf_test)
@@ -432,21 +433,44 @@ for test_subject in participants:
         print("RF train shape:", rf_train.shape)
         print("SHAP shape:", shap_values.shape)
 
-        print(type(shap_values))
-        print(np.array(shap_values).shape)
-        print(rf_test.shape)
-        
-        # Use SHAP values for class 1 (Correct)
+        #Using SHAP values for the correct class
         shap_values_class1 = shap_values[:, :, 1]
 
-        shap.summary_plot(
-        shap_values_class1,
-        rf_test,
-        show=False
+        #Mean SHAP importance
+        importance = np.abs(shap_values_class1).mean(axis=0)
+
+        #Temporary feature names
+        feature_names = [f"Feature_{i}" for i in range(rf_test.shape[1])]
+
+        #Dataframe is created for saving the SHAP Values
+        shap_table = pd.DataFrame({
+            "Feature": feature_names,
+            "Mean_SHAP": importance
+        })
+
+        #Sort from most important
+        shap_table = shap_table.sort_values(
+            by="Mean_SHAP",
+            ascending=False
         )
-        
-        plt.savefig("shap_summary.png", dpi=300)
-        plt.close()
+
+        #Top 20 features
+        print("\nTop 20 Features")
+        print(shap_table.head(20))
+
+        #CSV of SHAP Features
+        shap_table.to_csv("shap_importance.csv", index=False)
+
+        #SHAP Graph
+        shap.summary_plot(
+            shap_values_class1,
+            rf_test,
+            feature_names=feature_names,
+            show=False
+        )
+
+    plt.savefig("shap_summary.png", dpi=300)
+    plt.close()
 
     #Saving accuracy
     #lda_scores.append(lda_acc)
