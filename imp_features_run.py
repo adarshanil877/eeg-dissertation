@@ -38,9 +38,9 @@ def preprocess(X_train, X_test):
     X_test = scaler.transform(X_test)
 
     #PCA done with 90% variance
-    #pca = PCA(n_components=0.90)
-    #X_train = pca.fit_transform(X_train)
-    #X_test = pca.transform(X_test)
+    pca = PCA(n_components=0.90)
+    X_train = pca.fit_transform(X_train)
+    X_test = pca.transform(X_test)
 
     return X_train, X_test
 
@@ -448,7 +448,7 @@ for file in files:
 #TO SELECT NUMBER OF FEATURES
 selected_indices = load_top_features(
     feature_names,
-    n_features=75
+    n_features=10
 )
 
 lda_scores = []
