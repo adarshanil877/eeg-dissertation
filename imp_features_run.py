@@ -283,20 +283,13 @@ def get_features_labels(file_path):
 def load_top_features(feature_names, n_features=50):
 
     #Load previous SHAP ranking
-    shap_importance = pd.read_csv(
-        "overall_shap_importance.csv"
-    )
+    shap_importance = pd.read_csv("overall_shap_importance.csv")
 
     #Sort by SHAP importance
-    shap_importance = shap_importance.sort_values(
-        by="Mean_SHAP",
-        ascending=False
-    )
+    shap_importance = shap_importance.sort_values(by="Mean_SHAP", ascending=False)
 
     #Select top N feature names
-    selected_features = shap_importance.head(
-        n_features
-    )["Feature"].tolist()
+    selected_features = shap_importance.head(n_features)["Feature"].tolist()
 
     #Convert feature names into column indexes
     selected_indices = [
@@ -307,8 +300,7 @@ def load_top_features(feature_names, n_features=50):
     print("\nSelected Features:")
     print(selected_features)
 
-    print("\nNumber of Selected Features:",
-          len(selected_indices))
+    print("\nNumber of Selected Features:", len(selected_indices))
 
     return selected_indices
 
