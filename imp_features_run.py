@@ -22,7 +22,7 @@ from xgboost import XGBClassifier
 from sklearn.dummy import DummyClassifier
 
 #Importing Evaluation Metrics
-from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay, roc_auc_score
+from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay, roc_auc_score, auc, roc_curve
 
 #For file handling
 import glob
@@ -324,8 +324,8 @@ def run_lda(X_train, X_test, y_train, y_test):
     #return accuracy_score(y_test, y_pred)
 
     #AUC-ROC Score
-    auc = roc_auc_score(y_test, y_prob)
-    return auc
+    auc_score = roc_auc_score(y_test, y_prob)
+    return auc_score, y_test, y_prob
 
 #FUNCTION TO RUN THE SVM MODEL----------------------
 def run_svm(X_train, X_test, y_train, y_test):
@@ -353,8 +353,8 @@ def run_svm(X_train, X_test, y_train, y_test):
     #return accuracy_score(y_test, y_pred)
 
     #Return AUC-ROC Score
-    auc = roc_auc_score(y_test, y_prob)
-    return auc
+    auc_score = roc_auc_score(y_test, y_prob)
+    return auc_score, y_test, y_prob
 
 #FUNCTION TO RUN THE RANDOM FOREST MODEL----------------------
 def run_random_forest(X_train, X_test, y_train, y_test):
@@ -378,8 +378,8 @@ def run_random_forest(X_train, X_test, y_train, y_test):
     #return accuracy_score(y_test, y_pred)
 
     #Return AUC-ROC Score
-    auc = roc_auc_score(y_test, y_prob)
-    return auc, model, X_train, X_test
+    auc_score = roc_auc_score(y_test, y_prob)
+    return auc_score, y_test, y_prob
 
 #FUNCTION TO RUN THE XGBOOST MODEL----------------------
 def run_xgboost(X_train, X_test, y_train, y_test):
@@ -412,8 +412,8 @@ def run_xgboost(X_train, X_test, y_train, y_test):
     #return accuracy_score(y_test, y_pred)
 
     #Return AUC-ROC Score
-    auc = roc_auc_score(y_test, y_prob)
-    return auc
+    auc_score = roc_auc_score(y_test, y_prob)
+    return auc_score, y_test, y_prob
 
 #FUNCTION TO RUN DUMMY CLASSIFIER ----------------------
 def run_dummy(X_train, X_test, y_train, y_test):
@@ -428,9 +428,9 @@ def run_dummy(X_train, X_test, y_train, y_test):
     y_prob = model.predict_proba(X_test)[:,1]
 
     #AUC score
-    auc = roc_auc_score(y_test, y_prob)
+    auc_score = roc_auc_score(y_test, y_prob)
 
-    return auc
+    return auc_score, y_test, y_prob
 
 #Main Code - Body
 start_time = time.time()
@@ -468,6 +468,14 @@ all_shap_values = []
 dummy_scores = []
 results_table = []
 
+#For ROC Curve
+roc_labels = []
+lda_probs = []
+svm_probs = []
+rf_probs = []
+xgb_probs = []
+dummy_probs = []
+
 #Starting LOOCV
 for test_subject in participants:
 
@@ -504,20 +512,31 @@ for test_subject in participants:
     y_test = participants[test_subject]["y"]
 
     #Running LDA
-    lda_acc = run_lda(X_train, X_test, y_train, y_test)
+    lda_acc, lda_y, lda_prob = run_lda(X_train, X_test, y_train, y_test)
 
     #Running SVM
-    svm_acc = run_svm(X_train, X_test, y_train, y_test)
+    svm_acc, svm_y, svm_prob = run_svm(X_train, X_test, y_train, y_test)
 
     #Running Random Forest
-    rf_acc, rf_model, rf_train, rf_test = run_random_forest(X_train, X_test, y_train, y_test)
+    rf_acc, rf_y, rf_prob = run_random_forest(X_train, X_test, y_train, y_test)
 
     #Running XGBoost
-    xgb_acc = run_xgboost(X_train, X_test, y_train, y_test)
+    xgb_acc, xgb_y, xgb_prob = run_xgboost(X_train, X_test, y_train, y_test)
 
     #Running Dummy Classifier
-    dummy_acc = run_dummy(X_train, X_test, y_train, y_test)
+    dummy_acc, dummy_y, dummy_prob = run_dummy(X_train, X_test, y_train, y_test)
 
+    # Store labels (only once)
+    roc_labels.extend(y_test)
+
+    # Store prediction probabilities
+    lda_probs.extend(lda_prob)
+    svm_probs.extend(svm_prob)
+    rf_probs.extend(rf_prob)
+    xgb_probs.extend(xgb_prob)
+    dummy_probs.extend(dummy_prob)
+
+    #Printing out the AUC Scores
     print("\nLDA AUC :", lda_acc)
     print("SVM AUC :", svm_acc)
     print("Random Forest AUC :", rf_acc)
@@ -561,6 +580,37 @@ average_row = {
 results_df.loc[len(results_df)] = average_row
 results_df.to_csv("model_auc_results.csv", index=False)
 print("\nResults saved as model_auc_results.csv")
+
+#ROC CURVE
+models = {
+    "LDA": lda_probs,
+    "SVM": svm_probs,
+    "Random Forest": rf_probs,
+    "XGBoost": xgb_probs,
+    "Dummy": dummy_probs
+}
+
+plt.figure(figsize=(8,6))
+
+for name, probs in models.items():
+    fpr, tpr, thresholds = roc_curve(roc_labels, probs)
+    roc_auc = auc(fpr, tpr)
+    plt.plot(fpr, tpr, label=f"{name} (AUC={roc_auc:.3f})")
+
+#Random classifier line
+plt.plot([0,1], [0,1], linestyle="--", label="Chance")
+
+#Make the graph
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve - LOSO EEG Classification")
+plt.legend()
+plt.grid()
+
+#Save the results
+plt.savefig("roc_curve.png", dpi=300, bbox_inches="tight")
+plt.show()
+print("ROC curve saved")
 
 #time to run program being printed -----------------------------------------
 end_time = time.time()
