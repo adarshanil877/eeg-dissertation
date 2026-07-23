@@ -605,7 +605,7 @@ plt.xlabel("False Positive Rate")
 plt.ylabel("True Positive Rate")
 plt.title("ROC Curve - LOSO EEG Classification")
 plt.legend()
-plt.grid()
+plt.grid(True)
 
 #Save the results
 plt.savefig("roc_curve.png", dpi=300, bbox_inches="tight")
