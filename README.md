@@ -191,9 +191,9 @@ This trains and evaluates models using SHAP-selected features.
 
 ## Current Results
 
-Initial LOSO experiments achieved AUC-ROC values around 0.60.
+The first LOOCV tests resulted in an AUC-ROC of about 0.60.
 
-SHAP-based feature selection reduced the number of input features while maintaining comparable performance, improving model interpretability and reducing feature complexity.
+The use of SHAP feature selection resulted in a decrease of input variables while achieving similar performance.
 
 ---
 
