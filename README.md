@@ -125,6 +125,106 @@ Some of the feature subsets used include:
 
 ## Dataset
 
-The EEG dataset is not included in this repository due to privacy restrictions.
+The EEG data will not be available within this repository because of privacy reasons.
 
-The scripts expect EEG recordings to be placed inside:
+EEG data are expected to be stored under the following path:
+
+```
+data/
+```
+
+The files should be named according to the participant naming convention used within the project.
+
+---
+
+## Running the Project
+
+### 1. Install Requirements
+
+Create a Python environment and install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+### 2. Run Baseline Classification Pipeline
+
+Run the original LOOCV:
+
+```bash
+python loocv.py
+```
+
+---
+
+### 3. Generate SHAP Feature Importance
+
+Run:
+
+```bash
+python shap_imp.py
+```
+
+This generates:
+
+```
+overall_shap_importance.csv
+```
+
+which contains the ranked feature importance values.
+
+---
+
+### 4. Run Classification with Selected Features
+
+Run:
+
+```bash
+python imp_features_run.py
+```
+
+This trains and evaluates models using SHAP-selected features.
+
+---
+
+## Current Results
+
+Initial LOSO experiments achieved AUC-ROC values around 0.60.
+
+SHAP-based feature selection reduced the number of input features while maintaining comparable performance, improving model interpretability and reducing feature complexity.
+
+---
+
+## Requirements
+
+Python 3.11+
+
+Main dependencies:
+
+- numpy
+- pandas
+- scipy
+- scikit-learn
+- mne
+- mne-features
+- shap
+- xgboost
+- matplotlib
+
+Install all dependencies using:
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Author
+
+Adarsh Anil
+
+MSc Cybersecurity and Artificial Intelligence
+
+The University of Sheffield
