@@ -19,6 +19,7 @@ from sklearn.svm import SVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
+from sklearn.dummy import DummyClassifier
 
 #Importing Evaluation Metrics
 from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay, roc_auc_score
@@ -414,6 +415,24 @@ def run_xgboost(X_train, X_test, y_train, y_test):
     auc = roc_auc_score(y_test, y_prob)
     return auc
 
+#FUNCTION TO RUN DUMMY CLASSIFIER ----------------------
+def run_dummy(X_train, X_test, y_train, y_test):
+
+    #Dummy classifier uses the most frequent class
+    model = DummyClassifier(
+        strategy="most_frequent"
+    )
+
+    #Training
+    model.fit(X_train, y_train)
+
+    #Prediction probabilities
+    y_prob = model.predict_proba(X_test)[:,1]
+
+    #AUC score
+    auc = roc_auc_score(y_test, y_prob)
+
+    return auc
 
 #Main Code - Body
 start_time = time.time()
@@ -448,6 +467,7 @@ svm_scores = []
 rf_scores =[]
 xgb_scores = []
 all_shap_values = []
+dummy_scores = []
 
 #Starting LOOCV
 for test_subject in participants:
@@ -496,16 +516,21 @@ for test_subject in participants:
     #Running XGBoost
     xgb_acc = run_xgboost(X_train, X_test, y_train, y_test)
 
+    #Running Dummy Classifier
+    dummy_acc = run_dummy(X_train, X_test, y_train, y_test)
+
     print("\nLDA AUC :", lda_acc)
     print("SVM AUC :", svm_acc)
     print("Random Forest AUC :", rf_acc)
     print("XGBoost AUC :", xgb_acc)
+    print("Dummy AUC :", dummy_acc)
 
     #Saving accuracy
     lda_scores.append(lda_acc)
     svm_scores.append(svm_acc)
     rf_scores.append(rf_acc)
     xgb_scores.append(xgb_acc)
+    dummy_scores.append(dummy_acc)
 
 #Final Results
 print("\n Final Results")
@@ -513,6 +538,7 @@ print("\nAverage LDA AUC :", np.mean(lda_scores))
 print("\nAverage SVM AUC :", np.mean(svm_scores))
 print("\nAverage Random Forest AUC :", np.mean(rf_scores))
 print("\nAverage XGBoost AUC :", np.mean(xgb_scores))
+print("\nAverage Dummy AUC :", np.mean(dummy_scores))
 
 end_time = time.time()
 runtime = end_time - start_time
