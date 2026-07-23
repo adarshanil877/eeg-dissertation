@@ -197,7 +197,8 @@ def get_features_labels(file_path):
     psds, psd_features = get_psd_features(epochs)
 
     #The Y Labels
-    y = epochs.events[:, -1]
+    encoder = LabelEncoder()
+    y = encoder.fit_transform(epochs.events[:, -1])
     
     #Stuff for previous count - Adding one if the labed is event id conditon 1
     # previous_correct = []
@@ -386,12 +387,6 @@ def run_xgboost(X_train, X_test, y_train, y_test):
 
     #Calling Preprocessing Function
     X_train, X_test = preprocess(X_train, X_test)
-
-    #Encode labels as 0 and 1
-    encoder = LabelEncoder()
-
-    y_train = encoder.fit_transform(y_train)
-    y_test = encoder.transform(y_test)
 
     #MODEL 4: XGBOOST
     model = XGBClassifier(
