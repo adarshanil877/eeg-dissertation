@@ -419,9 +419,7 @@ def run_xgboost(X_train, X_test, y_train, y_test):
 def run_dummy(X_train, X_test, y_train, y_test):
 
     #Dummy classifier uses the most frequent class
-    model = DummyClassifier(
-        strategy="most_frequent"
-    )
+    model = DummyClassifier(strategy="stratified", random_state=42)
 
     #Training
     model.fit(X_train, y_train)
@@ -468,6 +466,7 @@ rf_scores =[]
 xgb_scores = []
 all_shap_values = []
 dummy_scores = []
+results_table = []
 
 #Starting LOOCV
 for test_subject in participants:
@@ -525,6 +524,15 @@ for test_subject in participants:
     print("XGBoost AUC :", xgb_acc)
     print("Dummy AUC :", dummy_acc)
 
+    results_table.append({
+    "Participant": test_subject,
+    "LDA_AUC": lda_acc,
+    "SVM_AUC": svm_acc,
+    "RandomForest_AUC": rf_acc,
+    "XGBoost_AUC": xgb_acc,
+    "Dummy_AUC": dummy_acc
+        })
+
     #Saving accuracy
     lda_scores.append(lda_acc)
     svm_scores.append(svm_acc)
@@ -540,6 +548,21 @@ print("\nAverage Random Forest AUC :", np.mean(rf_scores))
 print("\nAverage XGBoost AUC :", np.mean(xgb_scores))
 print("\nAverage Dummy AUC :", np.mean(dummy_scores))
 
+#Savign results in a CSV Table
+results_df = pd.DataFrame(results_table)
+average_row = {
+    "Participant": "Average",
+    "LDA_AUC": np.mean(lda_scores),
+    "SVM_AUC": np.mean(svm_scores),
+    "RandomForest_AUC": np.mean(rf_scores),
+    "XGBoost_AUC": np.mean(xgb_scores),
+    "Dummy_AUC": np.mean(dummy_scores)
+}
+results_df.loc[len(results_df)] = average_row
+results_df.to_csv("model_auc_results.csv", index=False)
+print("\nResults saved as model_auc_results.csv")
+
+#time to run program being printed -----------------------------------------
 end_time = time.time()
 runtime = end_time - start_time
 print(f"\nTotal Runtime: {runtime:.2f} seconds")
