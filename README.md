@@ -49,18 +49,18 @@ The EEG channels used are:
 
 | File | Description |
 |------|-------------|
-| `preprocess.py` | EEG preprocessing functions |
-| `filter.py` | Signal filtering utilities |
+| `preprocess.py` | Functions for EEG pre-processing |
+| `filter.py` | Signal filtering tools |
 | `learning_psd.py` | EEG feature extraction experiments |
-| `loocv.py` | Leave-One-Subject-Out training and evaluation pipeline |
-| `shap_imp.py` | Calculates SHAP feature importance across participants |
-| `overall_shap_importance.csv` | Aggregated SHAP feature ranking |
-| `imp_features_run.py` | Retrains classifiers using selected SHAP features |
-| `testing_features.py` | Experiments with different feature selection methods |
-| `single_participant_acc.py` | Single participant evaluation |
-| `all_participants_acc.py` | Evaluation across participants |
-| `test.py` | Utility/testing script |
-| `test_load.py` | EEG data loading test |
+| `loocv.py` | Leave-one-out training & evaluation framework  |
+| `shap_imp.py` | Calculate SHAP feature importances for all subjects |
+| `overall_shap_importance.csv` | SHAP feature importances summary |
+| `imp_features_run.py` | Classifiers retraining on SHAP selected features |
+| `testing_features.py` | Experiment with various feature selection techniques |
+| `single_participant_acc.py` | Single subject evaluation |
+| `all_participants_acc.py` |  Participants’ evaluation |
+| `test.py` | General utility testing file |
+| `test_load.py` | Test EEG data loading |
 
 ---
 
