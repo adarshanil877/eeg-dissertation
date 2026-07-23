@@ -2,9 +2,9 @@
 
 ## MSc Dissertation Project
 
-This repository contains the code developed for my MSc dissertation at the University of Sheffield.
+This repository holds the source code that was written as part of my MSc dissertation at the University of Sheffield.
 
-The aim of this project is to investigate whether behavioural patterns can be predicted from EEG recordings using machine learning. The project follows an EEG analysis pipeline including signal preprocessing, feature extraction, feature selection using SHAP, and classification using multiple machine learning models.
+The goal of this project is to explore the possibility of predicting behavioural patterns from EEG signals by means of machine learning. The pipeline of the project involves EEG analysis, which consists of signal pre-processing, feature extraction, feature selection via SHAP, and classification.
 
 ---
 
@@ -12,27 +12,27 @@ The aim of this project is to investigate whether behavioural patterns can be pr
 
 The workflow of the project is:
 
-1. Load raw EEG recordings.
-2. Preprocess EEG signals.
-3. Extract frequency-domain and time-domain features.
-4. Perform Leave-One-Subject-Out (LOSO) evaluation.
-5. Compute SHAP feature importance across participants.
-6. Select the most important features.
-7. Retrain classifiers using only selected features.
-8. Compare classification performance using AUC-ROC.
+1. Loading raw EEG recordings.
+2. EEG signal preprocessing.
+3. Feature extraction in frequency domain and time domain.
+4. Conducting Leave-One-Subject-Out (LOSO) test.
+5. Estimating SHAP feature importance for each participant.
+6. Selection of top features.
+7. Retraining classifiers based on selected features.
+8. Classification performance comparison by AUC-ROC score.
 
 ---
 
 ## EEG Preprocessing
 
-The EEG recordings are processed using the MNE Python package.
+The data obtained through EEG is then processed through the MNE-Python library.
 
-The preprocessing pipeline includes:
+The pre-processing steps include:
 
-- Filtering EEG signals between 1-40 Hz.
+- Filtering of EEG data between 1-40Hz.
 - Selecting frontal EEG channels.
-- Creating epochs based on behavioural events.
-- Extracting 1-second EEG segments around events before feature extraction.
+- Defining epochs on the basis of events.
+- Isolating 1 second EEG data before extracting features from them.
 
 The EEG channels used are:
 
@@ -103,23 +103,23 @@ The extracted EEG features include frequency-domain and time-domain features.
 
 ## Feature Selection Using SHAP
 
-Feature selection is performed using SHAP (SHapley Additive exPlanations).
+Feature selection is done by using SHAP (SHapley Additive exPlanations).
 
-The process is:
+This involves the following steps:
 
-1. Train models using the extracted EEG features.
-2. Calculate SHAP feature importance values.
-3. Aggregate feature importance across participants.
-4. Rank features based on their average SHAP importance.
-5. Retrain models using different numbers of top-ranked features.
+1. Train the models with the extracted EEG features.
+2. Compute SHAP feature importance scores.
+3. Compute the average feature importance over the participants.
+4. Rank the features based on the average SHAP importance.
+5. Retrain the models with varying number of selected features.
 
-Examples of feature subsets tested include:
+Some of the feature subsets used include:
 
-- Top 5 features
-- Top 10 features
-- Top 15 features
-- Top 20 features
-- Other SHAP-ranked feature subsets
+- The top 5 features
+- The top 10 features
+- The top 15 features
+- The top 20 features
+- Others
 
 ---
 
