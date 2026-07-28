@@ -21,6 +21,7 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import KFold
+from sklearn.model_selection import StratifiedKFold
 
 #Importing Evaluation Metrics
 from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay, roc_auc_score, auc, roc_curve
@@ -58,88 +59,6 @@ def get_psd_features(epochs):
 
     return psds, psd_features
 
-def get_hjorth_features(epochs):
-
-    #Getting EEG signal data
-    data = epochs.get_data()
-
-    hjorth_features = []
-
-    #Looping through every epoch
-    for epoch in data:
-
-        epoch_features = []
-
-        #Looping through every EEG channel
-        for channel in epoch:
-
-            #First derivative - change in signal
-            first_derivative = np.diff(channel)
-
-            #Second derivative - change in the first derivative
-            second_derivative = np.diff(first_derivative)
-
-            #Computing Hjorth Activity - The fluctuation of signal
-            activity = np.var(channel)
-
-            #Hjorth Mobility - How slow or fast the waves are
-            mobility = np.sqrt(
-                np.var(first_derivative) / activity
-            )
-
-            #Hjorth Complexity - how smooth or irregular the waves are
-            complexity = (
-                np.sqrt(
-                    np.var(second_derivative) /
-                    np.var(first_derivative)
-                )
-                / mobility
-            )
-
-            #Adding 3 Hjorth values for each channel
-            epoch_features.extend([
-                activity,
-                mobility,
-                complexity
-            ])
-
-        hjorth_features.append(epoch_features)
-
-    return np.array(hjorth_features)
-
-def get_bandpower_features(psds):
-
-    #Get individual frequencies in bandpower
-    freqs = psds.freqs
-
-    #Getting all the PSD values
-    psd_data = psds.get_data()
-
-    #Defining the Bands to be used in Bandpower features - Standard EEG bands
-    bands = {
-        "delta": (1,4),
-        "theta": (4,8),
-        "alpha": (8,13),
-        "beta": (13,30),
-        "gamma": (30,40)
-    }
-
-    bandpower = []
-
-    #Calculating the average value for bandpower - Looping through every band's high and low values
-    for low, high in bands.values():
-        
-        idx = (freqs >= low) & (freqs < high)
-        
-        #Mean power inside each frequency band for which the condition of IDX is true
-        band = psd_data[:, :, idx].mean(axis=2)
-        
-        #Appending the power as per band into pandpower
-        bandpower.append(band)
-
-    bandpower = np.concatenate(bandpower, axis=1)
-    return bandpower
-
 def get_mne_features(epochs):
 
     #Getting EEG signal data
@@ -147,18 +66,15 @@ def get_mne_features(epochs):
 
     #Extracting MNE Features
     features = extract_features(
-        data,
-        sfreq=epochs.info["sfreq"],
-        selected_funcs=[
-        "line_length",
+    data,
+    sfreq=epochs.info["sfreq"],
+    selected_funcs=[
         "kurtosis",
         "skewness",
         "hjorth_mobility",
         "hjorth_complexity",
-        "zero_crossings",
         "spect_entropy",
         "svd_entropy",
-        "app_entropy",
         "samp_entropy"
         ]
     )
@@ -200,53 +116,12 @@ def get_features_labels(file_path):
     #The Y Labels
     encoder = LabelEncoder()
     y = encoder.fit_transform(epochs.events[:, -1])
-    
-    #Stuff for previous count - Adding one if the labed is event id conditon 1
-    # previous_correct = []
-    # count = 0
-
-    # for label in y:
-
-    #     previous_correct.append(count)
-
-    #     #Writing for condition 1 - Correct condition - Increase count by 1
-    #     if label == event_id["condition 1"]:
-    #         count += 1
-
-    #     #Writing for condition 2 - Incorrect Condition
-    #     elif label == event_id["condition 2"]:
-    #         count = 0
-
-    # previous_correct = np.array(previous_correct).reshape(-1,1)
-
-    
-    # Using only PSD (Experiment 1)
-    #X = psd_features
-
-    #Getting Bandpower Features (Experiment 2)
-    #bandpower_features = get_bandpower_features(psds)
-    #Combining PSD + Bandpower
-    #X = np.concatenate((psd_features, bandpower_features), axis=1)
-    
-    #Getting Hjorth Features (Experiment 3)
-    #hjorth_features = get_hjorth_features(epochs)
-    #Combining PSD + Hjorth Features
-    #X = np.concatenate((psd_features, hjorth_features), axis=1)
-    
-    #Getting CSP Features (Experiment 4 - Experimental and wrong)
-    #csp_features = get_csp_features(epochs, y)
-    #Combining PSD + CSP
-    #X = np.concatenate((psd_features,csp_features), axis=1)
 
     #MNE Features (Experiment 5)
     mne_features = get_mne_features(epochs)
 
-    #X = mne_features
     #Combining PSD + MNE Features (Experiment 6)
     X = np.concatenate((psd_features, mne_features), axis=1)
-
-    #Using the number of correct previous answers (Experiment 7)
-    #X = np.concatenate((psd_features, mne_features, previous_correct), axis=1)
 
     #Creating names for every feature
     feature_names = []
@@ -262,17 +137,14 @@ def get_features_labels(file_path):
 
    #Names of the MNE features
     mne_feature_names = [
-        "line_length",
-        "kurtosis",
-        "skewness",
-        "hjorth_mobility",
-        "hjorth_complexity",
-        "zero_crossings",
-        "spect_entropy",
-        "svd_entropy",
-        "app_entropy",
-        "samp_entropy"
-    ]
+    "kurtosis",
+    "skewness",
+    "hjorth_mobility",
+    "hjorth_complexity",
+    "spect_entropy",
+    "svd_entropy",
+    "samp_entropy"
+    ]     
 
     #Adding the feature name for every channel
     for feature in mne_feature_names:
@@ -283,18 +155,36 @@ def get_features_labels(file_path):
 
     return X, y, feature_names
 
-def load_top_features(feature_names, n_features=50):
+def load_top_features(X_train, y_train, feature_names, n_features=10):
 
-    #Load previous SHAP ranking
-    shap_importance = pd.read_csv("overall_shap_importance.csv")
+    #Temporary model for finding important features
+    model = RandomForestClassifier(
+        n_estimators=100,
+        random_state=42
+    )
 
-    #Sort by SHAP importance
-    shap_importance = shap_importance.sort_values(by="Mean_SHAP", ascending=False)
+    #Train only on training data
+    model.fit(X_train, y_train)
 
-    #Select top N feature names
+    #Getting feature importance
+    importance = model.feature_importances_
+
+    #Creating dataframe of features and importance
+    shap_importance = pd.DataFrame({
+        "Feature": feature_names,
+        "Importance": importance
+    })
+
+    #Sorting features by importance
+    shap_importance = shap_importance.sort_values(
+        by="Importance",
+        ascending=False
+    )
+
+    #Selecting top features
     selected_features = shap_importance.head(n_features)["Feature"].tolist()
 
-    #Convert feature names into column indexes
+    #Getting column indexes
     selected_indices = [
         feature_names.index(feature)
         for feature in selected_features
@@ -450,7 +340,7 @@ dummy_probs = []
 X_all = []
 y_all = []
 
-#Adding X and Y to the variables
+##Adding X and Y to the variables
 for file in files:
     X, y, feature_names = get_features_labels(file)
     X_all.append(X)
@@ -459,31 +349,30 @@ for file in files:
 X_all = np.vstack(X_all)
 y_all = np.concatenate(y_all)
 
-#Selecting top10 SHAP Features
-selected_indices = load_top_features(
-    feature_names,
-    n_features=10
-)
-
-X_all = X_all[:, selected_indices]
-
-#Doild KFOLD Classification
-#Starting KFold
-kf = KFold(
+#Starting Stratified K-Fold
+skf = StratifiedKFold(
     n_splits=5,
     shuffle=True,
     random_state=42
 )
 
-for fold, (train_index, test_index) in enumerate(kf.split(X_all), start=1):
+for fold, (train_index, test_index) in enumerate(skf.split(X_all, y_all), start=1):
 
     print("\nFold:", fold)
 
+    #Split data
     X_train = X_all[train_index]
     X_test = X_all[test_index]
 
     y_train = y_all[train_index]
     y_test = y_all[test_index]
+
+    #Load top SHAP features
+    selected_indices = load_top_features(feature_names, n_features=10)
+
+    #Select the same features from train and test
+    X_train = X_train[:, selected_indices]
+    X_test = X_test[:, selected_indices]
 
     #Running LDA
     lda_acc, lda_y, lda_prob = run_lda(X_train, X_test, y_train, y_test)
