@@ -155,7 +155,7 @@ def get_features_labels(file_path):
 
     return X, y, feature_names
 
-def load_top_features(X_train, y_train, feature_names, n_features=10):
+def select_top_features(X_train, y_train, feature_names, n_features=10):
 
     #Temporary model for finding important features
     model = RandomForestClassifier(
@@ -232,7 +232,10 @@ def run_svm(X_train, X_test, y_train, y_test):
     model = CalibratedClassifierCV(
         svm,
         method="sigmoid",
-        cv=5
+        cv=StratifiedKFold(
+        n_splits=5,
+        shuffle=True,
+        random_state=42)
     )
     
     #Training the Model
@@ -368,7 +371,7 @@ for fold, (train_index, test_index) in enumerate(skf.split(X_all, y_all), start=
     y_test = y_all[test_index]
 
     #Load top SHAP features
-    selected_indices = load_top_features(feature_names, n_features=10)
+    selected_indices = select_top_features(X_train, y_train, feature_names, n_features=10)
 
     #Select the same features from train and test
     X_train = X_train[:, selected_indices]
