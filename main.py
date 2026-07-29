@@ -163,11 +163,11 @@ def get_features_labels(file_path):
 
 def get_shap_top_features(X_train, y_train, feature_names, n_features=10):
 
-    #Scaling before SHAP so importance isn't skewed by feature scale
+    #Scsling Before SHAP
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X_train)
 
-    #Using XGBoost as the model to compute SHAP values from
+    #XGBoost used to get SHAP Values
     model = XGBClassifier(
         n_estimators=100,
         max_depth=6,
@@ -337,13 +337,14 @@ for file in files:
     #Scaling every single participant data wrt to that participants mean
     subject_scaler = StandardScaler()
     X = subject_scaler.fit_transform(X)
-    
+
     #Adding the features to dictionary
     participants[participant_name] = {
         "X": X,
         "y": y,
         "feature_names": feature_names
     }
+
 
 lda_scores = []
 svm_scores = []
@@ -397,7 +398,7 @@ for test_subject in participants:
         X_train_full,
         y_train,
         feature_names,
-        n_features=10
+        n_features=20
     )
 
     #Now applying the selected features to train and test sets
