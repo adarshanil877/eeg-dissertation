@@ -398,10 +398,10 @@ for test_subject in participants:
         X_train_full,
         y_train,
         feature_names,
-        n_features=30
+        n_features=10
     )
 
-    #Now applying the selected features to train and test sets
+    #Applying the selected features to train and test sets
     X_train = X_train_full[:, selected_indices]
 
     #Testing Participant
@@ -423,17 +423,17 @@ for test_subject in participants:
     #Running Dummy Classifier
     dummy_acc, dummy_y, dummy_prob = run_dummy(X_train, X_test, y_train, y_test)
 
-    # Store labels (only once)
+    #Labels are stored
     roc_labels.extend(y_test)
 
-    # Store prediction probabilities
+    #Prediction Probabilities Stored
     lda_probs.extend(lda_prob)
     svm_probs.extend(svm_prob)
     rf_probs.extend(rf_prob)
     xgb_probs.extend(xgb_prob)
     dummy_probs.extend(dummy_prob)
 
-    #Printing out the AUC Scores
+    #Printing AUC Scores
     print("\nLDA AUC :", lda_acc)
     print("SVM AUC :", svm_acc)
     print("Random Forest AUC :", rf_acc)
@@ -464,7 +464,7 @@ print("\nAverage Random Forest AUC :", np.mean(rf_scores))
 print("\nAverage XGBoost AUC :", np.mean(xgb_scores))
 print("\nAverage Dummy AUC :", np.mean(dummy_scores))
 
-#Savign results in a CSV Table
+#Saving results in a CSV Table
 results_df = pd.DataFrame(results_table)
 average_row = {
     "Participant": "Average",
@@ -474,6 +474,7 @@ average_row = {
     "XGBoost_AUC": np.mean(xgb_scores),
     "Dummy_AUC": np.mean(dummy_scores)
 }
+
 results_df.loc[len(results_df)] = average_row
 results_df.to_csv("model_auc_results.csv", index=False)
 print("\nResults saved as model_auc_results.csv")
