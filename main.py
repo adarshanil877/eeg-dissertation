@@ -20,6 +20,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.dummy import DummyClassifier
+from sklearn.model_selection import StratifiedKFold
 
 #Importing Evaluation Metrics
 from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay, roc_auc_score, auc, roc_curve
@@ -227,9 +228,13 @@ def run_svm(X_train, X_test, y_train, y_test):
     
     #Calibration to get probabilities
     model = CalibratedClassifierCV(
-        svm,
-        method="sigmoid",
-        cv=5
+    svm,
+    method="sigmoid",
+    cv=StratifiedKFold(
+        n_splits=5,
+        shuffle=True,
+        random_state=42
+        )
     )
     
     #Training the Model
