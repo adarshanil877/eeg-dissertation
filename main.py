@@ -398,7 +398,7 @@ for test_subject in participants:
         X_train_full,
         y_train,
         feature_names,
-        n_features=20
+        n_features=30
     )
 
     #Now applying the selected features to train and test sets
