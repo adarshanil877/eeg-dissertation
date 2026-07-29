@@ -334,6 +334,10 @@ for file in files:
     #Using participant names from filenames
     participant_name = os.path.basename(file).replace("_cleaned.set", "")
 
+    #Scaling every single participant data wrt to that participants mean
+    subject_scaler = StandardScaler()
+    X = subject_scaler.fit_transform(X)
+    
     #Adding the features to dictionary
     participants[participant_name] = {
         "X": X,
