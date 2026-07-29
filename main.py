@@ -21,6 +21,7 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import StratifiedKFold
+from sklearn.linear_model import LogisticRegression
 
 #Importing Evaluation Metrics
 from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay, roc_auc_score, auc, roc_curve
@@ -250,6 +251,29 @@ def run_svm(X_train, X_test, y_train, y_test):
     auc_score = roc_auc_score(y_test, y_prob)
     return auc_score, y_test, y_prob
 
+#FUNCTION TO RUN LOGISTIC REGRESSION ----------------------
+def run_logistic_regression(X_train, X_test, y_train, y_test):
+
+    #Scaling
+    X_train, X_test = preprocess(X_train, X_test)
+
+    #MODEL: Logistic Regression
+    model = LogisticRegression(
+        max_iter=1000,
+        random_state=42
+    )
+
+    #Training
+    model.fit(X_train, y_train)
+
+    #Probability prediction
+    y_prob = model.predict_proba(X_test)[:,1]
+
+    #AUC
+    auc_score = roc_auc_score(y_test, y_prob)
+
+    return auc_score, y_test, y_prob
+
 #FUNCTION TO RUN THE RANDOM FOREST MODEL----------------------
 def run_random_forest(X_train, X_test, y_train, y_test):
 
@@ -350,6 +374,7 @@ lda_scores = []
 svm_scores = []
 rf_scores =[]
 xgb_scores = []
+log_scores = []
 all_shap_values = []
 dummy_scores = []
 results_table = []
@@ -360,6 +385,7 @@ lda_probs = []
 svm_probs = []
 rf_probs = []
 xgb_probs = []
+log_probs = []
 dummy_probs = []
 
 #Starting LOOCV
@@ -420,6 +446,9 @@ for test_subject in participants:
     #Running XGBoost
     xgb_acc, xgb_y, xgb_prob = run_xgboost(X_train, X_test, y_train, y_test)
 
+    #Running Logistic Regression
+    log_acc, log_y, log_prob = run_logistic_regression(X_train, X_test, y_train, y_test)
+
     #Running Dummy Classifier
     dummy_acc, dummy_y, dummy_prob = run_dummy(X_train, X_test, y_train, y_test)
 
@@ -431,6 +460,7 @@ for test_subject in participants:
     svm_probs.extend(svm_prob)
     rf_probs.extend(rf_prob)
     xgb_probs.extend(xgb_prob)
+    log_probs.extend(log_prob)
     dummy_probs.extend(dummy_prob)
 
     #Printing AUC Scores
@@ -438,6 +468,7 @@ for test_subject in participants:
     print("SVM AUC :", svm_acc)
     print("Random Forest AUC :", rf_acc)
     print("XGBoost AUC :", xgb_acc)
+    print("Logistic Regression AUC :", log_acc)
     print("Dummy AUC :", dummy_acc)
 
     results_table.append({
@@ -446,6 +477,7 @@ for test_subject in participants:
     "SVM_AUC": svm_acc,
     "RandomForest_AUC": rf_acc,
     "XGBoost_AUC": xgb_acc,
+    "Logistic_AUC": log_acc,
     "Dummy_AUC": dummy_acc
         })
 
@@ -454,6 +486,7 @@ for test_subject in participants:
     svm_scores.append(svm_acc)
     rf_scores.append(rf_acc)
     xgb_scores.append(xgb_acc)
+    log_scores.append(log_acc)
     dummy_scores.append(dummy_acc)
 
 #Final Results
@@ -462,6 +495,7 @@ print("\nAverage LDA AUC :", np.mean(lda_scores))
 print("\nAverage SVM AUC :", np.mean(svm_scores))
 print("\nAverage Random Forest AUC :", np.mean(rf_scores))
 print("\nAverage XGBoost AUC :", np.mean(xgb_scores))
+print("\nAverage Logistic AUC :", np.mean(log_scores))
 print("\nAverage Dummy AUC :", np.mean(dummy_scores))
 
 #Saving results in a CSV Table
@@ -472,6 +506,7 @@ average_row = {
     "SVM_AUC": np.mean(svm_scores),
     "RandomForest_AUC": np.mean(rf_scores),
     "XGBoost_AUC": np.mean(xgb_scores),
+    "LogisticReg_AUC": np.mean(log_scores),
     "Dummy_AUC": np.mean(dummy_scores)
 }
 
@@ -485,6 +520,7 @@ models = {
     "SVM": svm_probs,
     "Random Forest": rf_probs,
     "XGBoost": xgb_probs,
+    "Logistic Regression": log_probs,
     "Dummy": dummy_probs
 }
 
