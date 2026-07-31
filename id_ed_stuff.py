@@ -253,7 +253,7 @@ def get_shap_top_features(X_train, y_train, feature_names, n_features=10):
 
     #XGBoost used to get SHAP Values
     model = RandomForestClassifier(
-    n_estimators=200,
+    n_estimators=50,
     random_state=42
     )
     model.fit(X_train, y_train)
