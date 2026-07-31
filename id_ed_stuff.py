@@ -262,6 +262,13 @@ def get_shap_top_features(X_train, y_train, feature_names, n_features=10):
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(X_train)
 
+    # Handle different SHAP output formats
+    if isinstance(shap_values, list):
+        shap_values = shap_values[1]
+
+    elif len(shap_values.shape) == 3:
+        shap_values = shap_values[:, :, 1]
+
     #Averaging absolute SHAP value per feature
     mean_abs_shap = np.abs(shap_values).mean(axis=0)
 
