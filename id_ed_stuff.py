@@ -251,15 +251,18 @@ def get_features_labels(file_path):
 
 def get_shap_top_features(X_train, y_train, feature_names, n_features=10):
 
-    #LogReg used to get SHAP Values
-    model = LogisticRegression(
-        max_iter=1000,
-        random_state=42
-    )
+    #XGB Classifier for SHAP values
+    model = XGBClassifier(
+            n_estimators=100,
+            max_depth=6,
+            learning_rate=0.1,
+            random_state=42,
+            eval_metric="logloss"
+        )
     model.fit(X_train, y_train)
 
     #Computing SHAP values on the training fold only
-    explainer = shap.LinearExplainer(model, X_train)
+    explainer = shap.TreeExplainer(model, X_train)
     shap_values = explainer.shap_values(X_train)
 
     #Handle different SHAP output formats
