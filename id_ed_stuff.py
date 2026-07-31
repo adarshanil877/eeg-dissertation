@@ -50,8 +50,8 @@ ED_TRANSITIONS = [
     (31,33)
 ]
 
-EXPERIMENT = "ALL"
-# EXPERIMENT = "ID"
+#EXPERIMENT = "ALL"
+EXPERIMENT = "ID"
 # EXPERIMENT = "ED"
 
 def preprocess(X_train, X_test):
