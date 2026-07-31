@@ -251,10 +251,6 @@ def get_features_labels(file_path):
 
 def get_shap_top_features(X_train, y_train, feature_names, n_features=10):
 
-    #Scsling Before SHAP
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X_train)
-
     #XGBoost used to get SHAP Values
     model = XGBClassifier(
         n_estimators=100,
@@ -263,11 +259,11 @@ def get_shap_top_features(X_train, y_train, feature_names, n_features=10):
         random_state=42,
         eval_metric="logloss"
     )
-    model.fit(X_scaled, y_train)
+    model.fit(X_train, y_train)
 
     #Computing SHAP values on the training fold only
     explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(X_scaled)
+    shap_values = explainer.shap_values(X_train)
 
     #Averaging absolute SHAP value per feature
     mean_abs_shap = np.abs(shap_values).mean(axis=0)
@@ -589,7 +585,7 @@ average_row = {
     "SVM_AUC": np.mean(svm_scores),
     "RandomForest_AUC": np.mean(rf_scores),
     "XGBoost_AUC": np.mean(xgb_scores),
-    "LogisticReg_AUC": np.mean(log_scores),
+    "Logistic_AUC": np.mean(log_scores),
     "Dummy_AUC": np.mean(dummy_scores)
 }
 
@@ -620,7 +616,7 @@ plt.plot([0,1], [0,1], linestyle="--", label="Chance")
 #Make the graph
 plt.xlabel("False Positive Rate")
 plt.ylabel("True Positive Rate")
-plt.title("ROC Curve - LOSO EEG Classification")
+plt.title("Leave-One-Subject-Out ROC Curve")
 plt.legend()
 plt.grid(True)
 
