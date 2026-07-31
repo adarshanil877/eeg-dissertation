@@ -252,12 +252,9 @@ def get_features_labels(file_path):
 def get_shap_top_features(X_train, y_train, feature_names, n_features=10):
 
     #XGBoost used to get SHAP Values
-    model = XGBClassifier(
-        n_estimators=100,
-        max_depth=6,
-        learning_rate=0.1,
-        random_state=42,
-        eval_metric="logloss"
+    model = RandomForestClassifier(
+    n_estimators=200,
+    random_state=42
     )
     model.fit(X_train, y_train)
 
