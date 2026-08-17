@@ -1,52 +1,47 @@
 import mne
 import glob
-import numpy as np
+import os
 
 mne.set_log_level("ERROR")
 
 files = sorted(glob.glob("data/*.set"))
 
-def inspect_file(file_path):
+file = files[0]
 
-    print("\n" + "="*50)
-    print("FILE:", file_path)
-    print("="*50)
+print("Using participant:", os.path.basename(file))
 
-    # Load raw EEG
-    raw = mne.io.read_raw_eeglab(file_path, preload=True)
+raw = mne.io.read_raw_eeglab(
+    file,
+    preload=False
+)
 
-    # 1. Channels
-    print("\nCHANNEL INFO")
-    print("Number of channels:", len(raw.ch_names))
-    print("Channel names:", raw.ch_names)
+events, event_id = mne.events_from_annotations(raw)
 
-    # 2. Events
-    events, event_id = mne.events_from_annotations(raw)
+print("\nEVENT ID:")
+print(event_id)
 
-    print("\nEVENT INFO")
-    print("Event mapping:", event_id)
-    print("Total events:", len(events))
+print("\nFIRST 100 EVENTS:")
+print("--------------------------------")
 
-    # 3. Epochs
-    try:
-        epochs = mne.Epochs(
-            raw,
-            events,
-            event_id=event_id,
-            tmin=-1,
-            tmax=0,
-            baseline=None,
-            preload=True,
-            verbose=False
-        )
+reverse_event_id = {
+    value: key
+    for key, value in event_id.items()
+}
 
-        print("\nEPOCH INFO")
-        print("Epochs created:", len(epochs))
+for i in range(min(100, len(events))):
 
-    except Exception as e:
-        print("\nEPOCH ERROR:", e)
+    sample = events[i][0]
+    event_number = events[i][2]
 
+    time = sample / raw.info["sfreq"]
 
-# Run for all participants
-for f in files:
-    inspect_file(f)
+    event_name = reverse_event_id.get(
+        event_number,
+        "UNKNOWN"
+    )
+
+    print(
+        i,
+        "Time:", round(time, 3),
+        "Event:", event_name
+    )
