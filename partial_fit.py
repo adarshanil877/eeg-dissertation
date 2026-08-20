@@ -150,10 +150,6 @@ def get_features_labels(file_path):
 
 def get_shap_top_features(X_train, y_train, feature_names, n_features=10):
 
-    #Scsling Before SHAP
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X_train)
-
     #XGBoost used to get SHAP Values
     model = XGBClassifier(
         n_estimators=100,
@@ -162,11 +158,11 @@ def get_shap_top_features(X_train, y_train, feature_names, n_features=10):
         random_state=42,
         eval_metric="logloss"
     )
-    model.fit(X_scaled, y_train)
+    model.fit(X_train, y_train)
 
     #Computing SHAP values on the training fold only
     explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(X_scaled)
+    shap_values = explainer.shap_values(X_train)
 
     #Averaging absolute SHAP value per feature
     mean_abs_shap = np.abs(shap_values).mean(axis=0)
@@ -198,10 +194,6 @@ for file in files:
 
     #Using participant names from filenames
     participant_name = os.path.basename(file).replace("_cleaned.set", "")
-
-    #Scaling every single participant data wrt to that participants mean
-    subject_scaler = StandardScaler()
-    X = subject_scaler.fit_transform(X)
 
     #Adding the features to dictionary
     participants[participant_name] = {
@@ -329,6 +321,20 @@ for test_subject in participants:
      # ROC data
     roc_labels.extend(y_test)
     before_probs.extend(before_prob)
-    after_probs.extend(after_prob)   
+    after_probs.extend(after_prob)
+
+#FINAL RESULTS
+print("FINAL RESULTS")
+print("\nAVERAGE AUC BEFORE FINE TUNING : ",round(np.mean(before_scores),4))
+
+print("AVERAGE AUC AFTER FINE TUNING : ",round(np.mean(after_scores),4))
+print("\nMEAN IMPROVEMENT : ",round(np.mean(np.array(after_scores)-np.array(before_scores)),4))
+print("STANDARD DEVIATION BEFORE:",round(np.std(before_scores),4))
+print("STANDARD DEVIATION AFTER:", round(np.std(after_scores),4))
+
+#RESULTS TABLE
+results_df = pd.DataFrame(results_table)
+results_df.to_csv("partial_fit_results.csv", index=False)
+print("\nRESULTS SAVED IN partial_fit_results.csv")   
 
     
