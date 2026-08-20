@@ -319,7 +319,7 @@ for test_subject in participants:
     })
 
      # ROC data
-    roc_labels.extend(y_test)
+    roc_labels.extend(y_maintest)
     before_probs.extend(before_prob)
     after_probs.extend(after_prob)
 
