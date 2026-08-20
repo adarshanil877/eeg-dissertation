@@ -299,9 +299,36 @@ for test_subject in participants:
     model.fit(X_train_selected, y_train_full)
 
     #STEP 1 : TEST BEFORE FINE TUNING - NORMAL METHOD
-    before_prob = model.predict_proba(X_test)[:,1]
-    before_auc = roc_auc_score(y_test,before_prob)
+    before_prob = model.predict_proba(X_maintest)[:,1]
+    before_auc = roc_auc_score(y_maintest,before_prob)
 
-    #T
+    #STEP 2: FINE TUNING PN FIRST HALF AND THEN TESTING
+    model.partial_fit(X_adapt,y_adapt,classes=np.array([0,1]))
+
+    #STEP 3: TEST ON SECOND HALF OF TEST SUBJECT
+    after_prob = model.predict_proba(X_maintest)[:,1]
+    after_auc = roc_auc_score(y_maintest,after_prob)
+
+    #RESULTS
+    improvement = after_auc-before_auc
+
+    print("\nBEFORE FINE-TUNING AUC : ", round(before_auc, 4))
+    print("AFTER FINE-TUNING AUC : ", round(after_auc, 4))
+    print("IMPROVEMENT : ", round(improvement, 4))
+
+    before_scores.append(before_auc)
+    after_scores.append(after_auc)
+
+    results_table.append({
+        "Participant":test_subject,
+        "Before_FineTune_AUC":before_auc,
+        "After_FineTune_AUC":after_auc,
+        "Improvement":improvement
+    })
+
+     # ROC data
+    roc_labels.extend(y_test)
+    before_probs.extend(before_prob)
+    after_probs.extend(after_prob)   
 
     
