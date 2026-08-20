@@ -21,7 +21,7 @@ from sklearn.ensemble import RandomForestClassifier
 from xgboost import XGBClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import StratifiedKFold
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import LogisticRegression, SGDClassifier
 
 #Importing Evaluation Metrics
 from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay, roc_auc_score, auc, roc_curve
@@ -247,4 +247,61 @@ for test_subject in participants:
     scaler = StandardScaler()
     X_train_scaled = (scaler.fit_transform(X_train_full))  
 
-     
+    #SHAP FEATURE SELECTION
+    #Selecting top features using SHAP
+    selected_indices, selected_features = get_shap_top_features(
+        X_train_scaled,
+        y_train_full,
+        feature_names,
+        n_features=10
+    )
+
+    #Selecting Training Features
+    X_train_selected = (X_train_scaled[:, selected_indices])
+
+    #THE FINE TUNING PARTICIPANT
+    X_test = participants[test_subject]["X"]
+    y_test = participants[test_subject]["y"]
+
+    #Scaling the Test Subject
+    X_test_scaled = scaler.transform(X_test)
+
+    #SHAP for test subjects
+    X_test_selected = X_test_scaled[:, selected_indices]
+
+    #SPLITING TEST PARTICIPANT
+    n=len(X_test_selected)
+
+    split_point = n//2
+
+    #THE FIRST HALF IS MOVED ASIDE FOR ADAPTATION
+    X_adapt = X_test_selected[:split_point]
+    y_adapt = y_test[:split_point]
+
+    #SECOND HALF IS FOR TESTING
+    X_maintest = X_test_selected[split_point:]
+    y_maintest = y_test[split_point:]
+
+    print("\nTOTAL SAMPLES IN TEST PARTICIPANT : ", n)
+    print("FINE TUNING SAMPLES :", len(X_adapt))
+    print("FINAL TEST SAMPLES : ", len(X_maintest))
+
+    #MODEL
+    model = SGDClassifier(
+        loss="log_loss",
+        penalty="l2",
+        alpha=0.0001,
+        max_iter=1000,
+        random_state=42
+    )
+
+    #TRAINING ON 10 PARTICIPANTS
+    model.fit(X_train_selected, y_train_full)
+
+    #STEP 1 : TEST BEFORE FINE TUNING - NORMAL METHOD
+    before_prob = model.predict_proba(X_test)[:,1]
+    before_auc = roc_auc_score(y_test,before_prob)
+
+    #T
+
+    
