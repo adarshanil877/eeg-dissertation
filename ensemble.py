@@ -369,7 +369,6 @@ for file in files:
         "feature_names": feature_names
     }
 
-
 lda_scores = []
 svm_scores = []
 rf_scores =[]
@@ -458,10 +457,6 @@ for test_subject in participants:
 
     #Running Dummy Classifier
     dummy_acc, dummy_y, dummy_prob = run_dummy(X_train, X_test, y_train, y_test)
-
-    #--------------------------------------------------
-    # ENSEMBLE
-    #--------------------------------------------------
 
     #Averaging probabilities from the four selected models
     ensemble_prob = (
