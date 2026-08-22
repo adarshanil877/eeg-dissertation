@@ -1,5 +1,4 @@
-#LOOCV TESTING
-
+#ALL PARTICIPANTS INDIVIDUAL TESTING 
 import mne
 import time
 
@@ -13,7 +12,7 @@ from mne_features.feature_extraction import extract_features
 import shap
 import pandas as pd
 
-#Importing Models
+#IMPORTING MODELS
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.svm import SVC
 from sklearn.calibration import CalibratedClassifierCV
@@ -23,15 +22,19 @@ from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import StratifiedKFold
 from sklearn.linear_model import LogisticRegression
 
-#Importing Evaluation Metrics
+#IMPORTING EVALUATION METRICS
 from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay, roc_auc_score, auc, roc_curve
 
-#For file handling
+#IMPORTS FOR FILE HANDLING
 import glob
 import os
 
 mne.set_log_level("ERROR")
 files = sorted(glob.glob("data/*.set"))
+
+#ONE PARTICIPANT SELECTED FOR EXPERIMENT
+#file = files[0]
+#print("PARTICIPANT:", os.path.basename(file))
 
 def preprocess(X_train, X_test):
     
@@ -158,15 +161,11 @@ def get_features_labels(file_path):
         for channel in channels:
             feature_names.append(channel + "_" + feature)
 
-    print("Feature Shape:", X.shape)
+    print("FEATURE SHAPE :", X.shape)
 
     return X, y, feature_names
 
-def get_shap_top_features(X_train, y_train, feature_names, n_features=10):
-
-    #Scsling Before SHAP
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X_train)
+def get_shap_top_features(X_train_scaled, y_train, feature_names, n_features=10):
 
     #XGBoost used to get SHAP Values
     model = XGBClassifier(
@@ -176,11 +175,11 @@ def get_shap_top_features(X_train, y_train, feature_names, n_features=10):
         random_state=42,
         eval_metric="logloss"
     )
-    model.fit(X_scaled, y_train)
+    model.fit(X_train_scaled, y_train)
 
     #Computing SHAP values on the training fold only
     explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(X_scaled)
+    shap_values = explainer.shap_values(X_train_scaled)
 
     #Averaging absolute SHAP value per feature
     mean_abs_shap = np.abs(shap_values).mean(axis=0)
@@ -190,17 +189,14 @@ def get_shap_top_features(X_train, y_train, feature_names, n_features=10):
     selected_indices = ranking[:n_features].tolist()
     selected_features = [feature_names[i] for i in selected_indices]
 
-    print("\nSelected Features:")
-    print(selected_features)
-    print("\nNumber of Selected Features:", len(selected_indices))
+    #print("\nSELECTED FEATURES :")
+    #for feature in selected_features:
+         #print(feature)
 
     return selected_indices, selected_features
 
 #FUNCTION TO RUN THE LDA MODEL----------------------
 def run_lda(X_train, X_test, y_train, y_test):
-
-    #Calling  Preprocessing Function
-    X_train, X_test = preprocess(X_train, X_test)
 
     #MODEL 1: LINEAR DISCRIMINANT ANALYSIS (LDA)
     model = LinearDiscriminantAnalysis()
@@ -211,18 +207,16 @@ def run_lda(X_train, X_test, y_train, y_test):
     #Predicting the Y Labels on the Test Dataset
     y_prob = model.predict_proba(X_test)[:,1]
 
-    #Accuracy
-    #return accuracy_score(y_test, y_pred)
+    #AUC-ROC  and Accuracy Score
+    y_pred = (y_prob >= 0.5).astype(int)
 
-    #AUC-ROC Score
+    accuracy = accuracy_score(y_test, y_pred)
     auc_score = roc_auc_score(y_test, y_prob)
-    return auc_score, y_test, y_prob
+
+    return accuracy, auc_score, y_test, y_prob
 
 #FUNCTION TO RUN THE SVM MODEL----------------------
 def run_svm(X_train, X_test, y_train, y_test):
-
-    #Calling Preprocessing function
-    X_train, X_test = preprocess(X_train, X_test)
 
     #MODEL 2: SUPPORT VECTOR MACHINE (SVM) - new way because of changed versions
     svm = SVC(kernel="linear", random_state=42)
@@ -244,21 +238,20 @@ def run_svm(X_train, X_test, y_train, y_test):
     #Predicting the Y Labels on Test Dataset
     y_prob = model.predict_proba(X_test)[:,1]
 
-    #Accuracy
-    #return accuracy_score(y_test, y_pred)
+    #AUC-ROC  and Accuracy Score
+    y_pred = (y_prob >= 0.5).astype(int)
 
-    #Return AUC-ROC Score
+    accuracy = accuracy_score(y_test, y_pred)
     auc_score = roc_auc_score(y_test, y_prob)
-    return auc_score, y_test, y_prob
+
+    return accuracy, auc_score, y_test, y_prob
 
 #FUNCTION TO RUN LOGISTIC REGRESSION ----------------------
 def run_logistic_regression(X_train, X_test, y_train, y_test):
 
-    #Scaling
-    X_train, X_test = preprocess(X_train, X_test)
-
-    #MODEL: Logistic Regression
+    #MODEL: LOGISTIC REGRESSION
     model = LogisticRegression(
+        C=0.1,
         max_iter=1000,
         random_state=42
     )
@@ -269,16 +262,16 @@ def run_logistic_regression(X_train, X_test, y_train, y_test):
     #Probability prediction
     y_prob = model.predict_proba(X_test)[:,1]
 
-    #AUC
+    #AUC-ROC  and Accuracy Score
+    y_pred = (y_prob >= 0.5).astype(int)
+
+    accuracy = accuracy_score(y_test, y_pred)
     auc_score = roc_auc_score(y_test, y_prob)
 
-    return auc_score, y_test, y_prob
+    return accuracy, auc_score, y_test, y_prob
 
 #FUNCTION TO RUN THE RANDOM FOREST MODEL----------------------
 def run_random_forest(X_train, X_test, y_train, y_test):
-
-    #Calling Preprocessing Function
-    X_train, X_test = preprocess(X_train, X_test)
 
     #MODEL 3: RANDOM FOREST
     model = RandomForestClassifier(
@@ -292,18 +285,16 @@ def run_random_forest(X_train, X_test, y_train, y_test):
     #Predicting the Y Labels on Test Dataset
     y_prob = model.predict_proba(X_test)[:,1]
 
-    #Accuracy
-    #return accuracy_score(y_test, y_pred)
+    #AUC-ROC  and Accuracy Score
+    y_pred = (y_prob >= 0.5).astype(int)
 
-    #Return AUC-ROC Score
+    accuracy = accuracy_score(y_test, y_pred)
     auc_score = roc_auc_score(y_test, y_prob)
-    return auc_score, y_test, y_prob
+
+    return accuracy, auc_score, y_test, y_prob
 
 #FUNCTION TO RUN THE XGBOOST MODEL----------------------
 def run_xgboost(X_train, X_test, y_train, y_test):
-
-    #Calling Preprocessing Function
-    X_train, X_test = preprocess(X_train, X_test)
 
     #MODEL 4: XGBOOST
     model = XGBClassifier(
@@ -320,12 +311,13 @@ def run_xgboost(X_train, X_test, y_train, y_test):
     #Predicting the Y Labels
     y_prob = model.predict_proba(X_test)[:,1]
 
-    #Accuracy
-    #return accuracy_score(y_test, y_pred)
+    #AUC-ROC  and Accuracy Score
+    y_pred = (y_prob >= 0.5).astype(int)
 
-    #Return AUC-ROC Score
+    accuracy = accuracy_score(y_test, y_pred)
     auc_score = roc_auc_score(y_test, y_prob)
-    return auc_score, y_test, y_prob
+
+    return accuracy, auc_score, y_test, y_prob
 
 #FUNCTION TO RUN DUMMY CLASSIFIER ----------------------
 def run_dummy(X_train, X_test, y_train, y_test):
@@ -339,252 +331,177 @@ def run_dummy(X_train, X_test, y_train, y_test):
     #Prediction probabilities
     y_prob = model.predict_proba(X_test)[:,1]
 
-    #AUC score
+    #AUC-ROC  and Accuracy Score
+    y_pred = (y_prob >= 0.5).astype(int)
+
+    accuracy = accuracy_score(y_test, y_pred)
     auc_score = roc_auc_score(y_test, y_prob)
 
-    return auc_score, y_test, y_prob
+    return accuracy, auc_score, y_test, y_prob
 
-#Main Code - Body
+#MAIN BODY
 start_time = time.time()
 
-#Dictionary to store all participants
-participants = {}
+print("\nRUNNING ALL PARTICIPANTS")
 
-#Reading every participant
+models = {
+    "LDA": run_lda,
+    "SVM": run_svm,
+    "LOGISTIC": run_logistic_regression,
+    "RANDOM FOREST": run_random_forest,
+    "XGBOOST": run_xgboost,
+    "DUMMY": run_dummy
+}
+
+results = {
+    "LDA": [],
+    "SVM": [],
+    "LOGISTIC": [],
+    "RANDOM FOREST": [],
+    "XGBOOST": [],
+    "ENSEMBLE": [],
+    "DUMMY": []
+}
+
 for file in files:
 
-    X, y, feature_names = get_features_labels(file)
+    #STORAGE
+    all_y_true = []
+    all_lda_prob = []
+    all_svm_prob = []
+    all_rf_prob = []
+    all_xgb_prob = []
+    all_log_prob = []
+    all_ensemble_prob = []
+    all_dummy_prob = []
+    fold_auc_results = []
 
-    #Using participant names from filenames
-    participant_name = os.path.basename(file).replace("_cleaned.set", "")
+    participant = os.path.basename(file).replace("_cleaned.set", "")
 
-    #Scaling every single participant data wrt to that participants mean
-    subject_scaler = StandardScaler()
-    X = subject_scaler.fit_transform(X)
+    print("\nPARTICIPANT : ", participant)
 
-    #Adding the features to dictionary
-    participants[participant_name] = {
-        "X": X,
-        "y": y,
-        "feature_names": feature_names
-    }
+    #EXTRACTING FEATURES FROM ONE PARTICIPANT
+    X,y, feature_names = get_features_labels(file)
+    #print("\nTOTAL SAMPLES: ", X.shape[0])
+    #print("TOTAL FEATURES: ", X.shape[1])
 
-lda_scores = []
-svm_scores = []
-rf_scores =[]
-xgb_scores = []
-log_scores = []
-all_shap_values = []
-dummy_scores = []
+    #K-FOLD CROSS VALIDATIONS
+    kfold = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
-#ENSEMBLE SCORE STORAGE
-ensemble_scores = []
+    print("\nSTARTING 5-FOLD CROSS-VALIDATION FOR PARTICIPANT : ", participant)
 
-results_table = []
+    for fold, (train_idx, test_idx) in enumerate(kfold.split(X,y), start=1):
 
-#For ROC Curve
-roc_labels = []
-lda_probs = []
-svm_probs = []
-rf_probs = []
-xgb_probs = []
-log_probs = []
-dummy_probs = []
+        #print("\nFOLD : ", fold)
 
-#ENSEMBLE ROC PROBABILITIES
-ensemble_probs = []
+        #DATA SPLIT INTO TRAINING AND TESTING DATA
+        X_train = X[train_idx]
+        X_test = X[test_idx]
 
-#Starting LOOCV
-for test_subject in participants:
+        y_train = y[train_idx]
+        y_test = y[test_idx]
 
-    print("\nTesting on:", test_subject)    
-    train_subjects = []
+        #print("TRAINING SAMPLES : ", len(train_idx))
+        #print("TESTING SAMPLES : ", len(test_idx))
 
-    #Making the Training subjects
-    for participant in participants:
-        if participant != test_subject:
-            train_subjects.append(participant)
+        scaler=StandardScaler()
+        
+        #SCALING THE TRAINING DATA
+        X_train_scaled = scaler.fit_transform(X_train)
+        
+        #SCALING THE VALIDATION DATA SEPERATELY
+        X_test_scaled = scaler.transform(X_test)
 
-    #Showing the Training Participants
-    print("Training Participants:", train_subjects)
+        #SHAP FEATURE SELECTION
+        selected_indices, selected_features = get_shap_top_features(X_train_scaled, y_train, feature_names, n_features=60)
 
-    #Combining only the Training Participants
-    X_train_full = []
-    y_train = []
+        #SELECTING THE REQUIRED SHAP FEATURES ONLY:
+        X_train_selected = X_train_scaled[:, selected_indices]
+        X_test_selected = X_test_scaled[:, selected_indices]
 
-    for participant in train_subjects:
+        #print("\nTRAINING SHAPE AFTER SHAP : ", X_train_selected.shape)
+        #print("TESTING SHAPE AFTER SHAP : ", X_test_selected.shape)
 
-        X_train_full.append(
-            participants[participant]["X"]
-        )
+        #Running LDA
+        lda_accuracy, lda_auc, lda_y, lda_prob = run_lda(X_train_selected, X_test_selected, y_train, y_test)
 
-        y_train.append(
-            participants[participant]["y"]
-        )
+        #Running SVM
+        svm_accuracy, svm_auc, svm_y, svm_prob = run_svm(X_train_selected, X_test_selected, y_train, y_test)
 
-    X_train_full = np.vstack(X_train_full)
-    y_train = np.concatenate(y_train)
+        #Running Random Forest
+        rf_accuracy, rf_auc, rf_y, rf_prob = run_random_forest(X_train_selected, X_test_selected, y_train, y_test)
 
-    #Selecting top features using SHAP
-    selected_indices, selected_features = get_shap_top_features(
-        X_train_full,
-        y_train,
-        feature_names,
-        n_features=10
+        #Running XGBoost
+        xgb_accuracy, xgb_auc, xgb_y, xgb_prob = run_xgboost(X_train_selected, X_test_selected, y_train, y_test)
+
+        #Running Logistic Regression
+        log_accuracy, log_auc, log_y, log_prob = run_logistic_regression(X_train_selected, X_test_selected, y_train, y_test)
+
+        #ENSEMBLE - AVERAGING PROBABILITIES FROM ALL FIVE MODELS
+        ensemble_prob = (lda_prob + svm_prob + log_prob + rf_prob + xgb_prob) / 5
+
+        #Running Dummy Classifier
+        dummy_accuracy, dummy_auc, dummy_y, dummy_prob = run_dummy(X_train_selected, X_test_selected, y_train, y_test)
+        
+        #SAVING PREDICTIONS OF THIS FOLD TO COMPUTE OVERALL FOLD RESULTS
+        all_y_true.extend(y_test)
+        all_lda_prob.extend(lda_prob)
+        all_svm_prob.extend(svm_prob)
+        all_log_prob.extend(log_prob)
+        all_rf_prob.extend(rf_prob)
+        all_xgb_prob.extend(xgb_prob)
+        all_ensemble_prob.extend(ensemble_prob)
+        all_dummy_prob.extend(dummy_prob)
+
+    #OVERALL APRTICIPANT AUC
+    participant_lda = roc_auc_score(all_y_true, all_lda_prob)
+    participant_svm = roc_auc_score(all_y_true, all_svm_prob)
+    participant_log = roc_auc_score(all_y_true, all_log_prob)
+    participant_rf = roc_auc_score(all_y_true, all_rf_prob)
+    participant_xgb = roc_auc_score(all_y_true, all_xgb_prob)
+    participant_ensemble = roc_auc_score(all_y_true, all_ensemble_prob)
+    participant_dummy = roc_auc_score(all_y_true, all_dummy_prob)
+
+    #SAVING RESULTS
+    results["LDA"].append(participant_lda)
+    results["SVM"].append(participant_svm)
+    results["LOGISTIC"].append(participant_log)
+    results["RANDOM FOREST"].append(participant_rf)
+    results["XGBOOST"].append(participant_xgb)
+    results["ENSEMBLE"].append(participant_ensemble)
+    results["DUMMY"].append(participant_dummy)
+
+    #PRINTING RESULTS FOR FIRST PARTICIPANT
+    print("LDA AUC : ", round(participant_lda, 4))
+    print("SVM AUC : ", round(participant_svm, 4))
+    print("LOGISTIC AUC : ", round(participant_log, 4))
+    print("RANDOM FOREST AUC : ", round(participant_rf, 4))
+    print("XGBOOST AUC : ", round(participant_xgb, 4))
+    print("ENSEMBLE AUC : ", round(participant_ensemble, 4))
+    print("DUMMY AUC : ", round(participant_dummy, 4))
+
+#OVERALL AUC RESULTS
+print("\nFINAL PARTICIPANT RESULTS")
+for i, file in enumerate(files):
+    participant = os.path.basename(file).replace("_cleaned.set", "")
+    print(participant,
+        "LDA : ", round(results["LDA"][i], 4),
+        "SVM : ", round(results["SVM"][i], 4),
+        "LOGISTIC : ", round(results["LOGISTIC"][i], 4),
+        "RF : ", round(results["RANDOM FOREST"][i], 4),
+        "XGB : ", round(results["XGBOOST"][i], 4),
+        "ENSEMBLE : ", round(results["ENSEMBLE"][i], 4),
+        "DUMMY : ", round(results["DUMMY"][i], 4)
     )
 
-    #Applying the selected features to train and test sets
-    X_train = X_train_full[:, selected_indices]
+#AVERAGE AUC FOR EACH MODEL
+print("\nAVERAGE AUC")
+for model_name in results:
+    average_auc = np.mean(results[model_name])
+    print(model_name, ":", round(average_auc, 4))
 
-    #Testing Participant
-    X_test = participants[test_subject]["X"][:, selected_indices]
-    y_test = participants[test_subject]["y"]
-
-    #Running LDA
-    lda_acc, lda_y, lda_prob = run_lda(X_train, X_test, y_train, y_test)
-
-    #Running SVM
-    svm_acc, svm_y, svm_prob = run_svm(X_train, X_test, y_train, y_test)
-
-    #Running Random Forest
-    rf_acc, rf_y, rf_prob = run_random_forest(X_train, X_test, y_train, y_test)
-
-    #Running XGBoost
-    xgb_acc, xgb_y, xgb_prob = run_xgboost(X_train, X_test, y_train, y_test)
-
-    #Running Logistic Regression
-    log_acc, log_y, log_prob = run_logistic_regression(X_train, X_test, y_train, y_test)
-
-    #Running Dummy Classifier
-    dummy_acc, dummy_y, dummy_prob = run_dummy(X_train, X_test, y_train, y_test)
-
-    #Averaging probabilities from the four selected models
-    ensemble_prob = (
-        svm_prob +
-        rf_prob +
-        xgb_prob +
-        log_prob
-    ) / 4
-
-    #Calculating Ensemble AUC
-    ensemble_auc = roc_auc_score(
-        y_test,
-        ensemble_prob
-    )
-
-    #Labels are stored
-    roc_labels.extend(y_test)
-
-    #Prediction Probabilities Stored
-    lda_probs.extend(lda_prob)
-    svm_probs.extend(svm_prob)
-    rf_probs.extend(rf_prob)
-    xgb_probs.extend(xgb_prob)
-    log_probs.extend(log_prob)
-    dummy_probs.extend(dummy_prob)
-
-    #Ensemble probabilities stored
-    ensemble_probs.extend(ensemble_prob)
-
-    #Printing AUC Scores
-    print("\nLDA AUC :", lda_acc)
-    print("SVM AUC :", svm_acc)
-    print("Random Forest AUC :", rf_acc)
-    print("XGBoost AUC :", xgb_acc)
-    print("Logistic Regression AUC :", log_acc)
-    print("Dummy AUC :", dummy_acc)
-    print("ENSEMBLE AUC :", ensemble_auc)
-
-    results_table.append({
-    "Participant": test_subject,
-    "LDA_AUC": lda_acc,
-    "SVM_AUC": svm_acc,
-    "RandomForest_AUC": rf_acc,
-    "XGBoost_AUC": xgb_acc,
-    "Logistic_AUC": log_acc,
-    "Dummy_AUC": dummy_acc,
-    "Ensemble_AUC": ensemble_auc
-        })
-
-    #Saving AUC
-    lda_scores.append(lda_acc)
-    svm_scores.append(svm_acc)
-    rf_scores.append(rf_acc)
-    xgb_scores.append(xgb_acc)
-    log_scores.append(log_acc)
-    dummy_scores.append(dummy_acc)
-
-    #Saving Ensemble AUC
-    ensemble_scores.append(ensemble_auc)
-
-#Final Results
-print("\n Final Results")
-print("\nAverage LDA AUC :", np.mean(lda_scores))
-print("\nAverage SVM AUC :", np.mean(svm_scores))
-print("\nAverage Random Forest AUC :", np.mean(rf_scores))
-print("\nAverage XGBoost AUC :", np.mean(xgb_scores))
-print("\nAverage Logistic AUC :", np.mean(log_scores))
-print("\nAverage Dummy AUC :", np.mean(dummy_scores))
-
-#ENSEMBLE RESULTS
-print("\nAverage Ensemble AUC :", np.mean(ensemble_scores))
-print("Standard Deviation Ensemble AUC :", np.std(ensemble_scores))
-
-#Saving results in a CSV Table
-results_df = pd.DataFrame(results_table)
-
-average_row = {
-    "Participant": "Average",
-    "LDA_AUC": np.mean(lda_scores),
-    "SVM_AUC": np.mean(svm_scores),
-    "RandomForest_AUC": np.mean(rf_scores),
-    "XGBoost_AUC": np.mean(xgb_scores),
-    "Logistic_AUC": np.mean(log_scores),
-    "Dummy_AUC": np.mean(dummy_scores),
-    "Ensemble_AUC": np.mean(ensemble_scores)
-}
-
-results_df.loc[len(results_df)] = average_row
-
-results_df.to_csv("model_auc_results.csv", index=False)
-
-print("\nResults saved as model_auc_results.csv")
-
-#ROC CURVE
-models = {
-    "LDA": lda_probs,
-    "SVM": svm_probs,
-    "Random Forest": rf_probs,
-    "XGBoost": xgb_probs,
-    "Logistic Regression": log_probs,
-    "Dummy": dummy_probs,
-    "Ensemble": ensemble_probs
-}
-
-plt.figure(figsize=(8,6))
-
-for name, probs in models.items():
-    fpr, tpr, thresholds = roc_curve(roc_labels, probs)
-    roc_auc = auc(fpr, tpr)
-    plt.plot(fpr, tpr, label=f"{name} (AUC={roc_auc:.3f})")
-
-#Random classifier line
-plt.plot([0,1], [0,1], linestyle="--", label="Chance")
-
-#Make the graph
-plt.xlabel("False Positive Rate")
-plt.ylabel("True Positive Rate")
-plt.title("ROC Curve - LOSO EEG Classification")
-plt.legend()
-plt.grid(True)
-
-#Save the results
-plt.savefig("roc_curve.png", dpi=300, bbox_inches="tight")
-plt.show()
-print("ROC curve saved")
-
-#time to run program being printed -----------------------------------------
+#TIME TO RUN PROGRAM
 end_time = time.time()
 runtime = end_time - start_time
-print(f"\nTotal Runtime: {runtime:.2f} seconds")
-print(f"Total Runtime: {runtime/60:.2f} minutes")
+print(f"\nTOTAL RUNTIME (SECS): {runtime:.2f} seconds")
+print(f"TOTAL RUNTIME (MINS): {runtime/60:.2f} minutes")
