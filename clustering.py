@@ -152,36 +152,6 @@ def get_features_labels(file_path):
 
     return X, y, feature_names
 
-def get_shap_top_features(X_train_scaled, y_train, feature_names, n_features=10):
-
-    #XGBoost used to get SHAP Values
-    model = XGBClassifier(
-        n_estimators=100,
-        max_depth=6,
-        learning_rate=0.1,
-        random_state=42,
-        eval_metric="logloss"
-    )
-    model.fit(X_train_scaled, y_train)
-
-    #Computing SHAP values on the training fold only
-    explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(X_train_scaled)
-
-    #Averaging absolute SHAP value per feature
-    mean_abs_shap = np.abs(shap_values).mean(axis=0)
-
-    #Ranking features by importance, highest first
-    ranking = np.argsort(mean_abs_shap)[::-1]
-    selected_indices = ranking[:n_features].tolist()
-    selected_features = [feature_names[i] for i in selected_indices]
-
-    #print("\nSELECTED FEATURES :")
-    #for feature in selected_features:
-         #print(feature)
-
-    return selected_indices, selected_features
-
 def find_best_k(X_scaled):
 
     #TESTING DIFFERENT CLUSTERS
@@ -319,150 +289,6 @@ def run_clustering(X, y, participant):
 
     return best_k, final_silhouette, cluster_labels, silhouette_scores
 
-#FUNCTION TO RUN THE LDA MODEL----------------------
-def run_lda(X_train, X_test, y_train, y_test):
-
-    #MODEL 1: LINEAR DISCRIMINANT ANALYSIS (LDA)
-    model = LinearDiscriminantAnalysis()
-    
-    #Training the Model
-    model.fit(X_train, y_train)
-
-    #Predicting the Y Labels on the Test Dataset
-    y_prob = model.predict_proba(X_test)[:,1]
-
-    #AUC-ROC  and Accuracy Score
-    y_pred = (y_prob >= 0.5).astype(int)
-
-    accuracy = accuracy_score(y_test, y_pred)
-    auc_score = roc_auc_score(y_test, y_prob)
-
-    return accuracy, auc_score, y_test, y_prob
-
-#FUNCTION TO RUN THE SVM MODEL----------------------
-def run_svm(X_train, X_test, y_train, y_test):
-
-    #MODEL 2: SUPPORT VECTOR MACHINE (SVM) - new way because of changed versions
-    svm = SVC(kernel="linear", random_state=42)
-    
-    #Calibration to get probabilities
-    model = CalibratedClassifierCV(
-    svm,
-    method="sigmoid",
-    cv=StratifiedKFold(
-        n_splits=5,
-        shuffle=True,
-        random_state=42
-        )
-    )
-    
-    #Training the Model
-    model.fit(X_train, y_train)
-
-    #Predicting the Y Labels on Test Dataset
-    y_prob = model.predict_proba(X_test)[:,1]
-
-    #AUC-ROC  and Accuracy Score
-    y_pred = (y_prob >= 0.5).astype(int)
-
-    accuracy = accuracy_score(y_test, y_pred)
-    auc_score = roc_auc_score(y_test, y_prob)
-
-    return accuracy, auc_score, y_test, y_prob
-
-#FUNCTION TO RUN LOGISTIC REGRESSION ----------------------
-def run_logistic_regression(X_train, X_test, y_train, y_test):
-
-    #MODEL: LOGISTIC REGRESSION
-    model = LogisticRegression(
-        C=0.1,
-        max_iter=1000,
-        random_state=42
-    )
-
-    #Training
-    model.fit(X_train, y_train)
-
-    #Probability prediction
-    y_prob = model.predict_proba(X_test)[:,1]
-
-    #AUC-ROC  and Accuracy Score
-    y_pred = (y_prob >= 0.5).astype(int)
-
-    accuracy = accuracy_score(y_test, y_pred)
-    auc_score = roc_auc_score(y_test, y_prob)
-
-    return accuracy, auc_score, y_test, y_prob
-
-#FUNCTION TO RUN THE RANDOM FOREST MODEL----------------------
-def run_random_forest(X_train, X_test, y_train, y_test):
-
-    #MODEL 3: RANDOM FOREST
-    model = RandomForestClassifier(
-        n_estimators=50,
-        random_state=42
-    )
-
-    #Training the Model
-    model.fit(X_train, y_train)
-
-    #Predicting the Y Labels on Test Dataset
-    y_prob = model.predict_proba(X_test)[:,1]
-
-    #AUC-ROC  and Accuracy Score
-    y_pred = (y_prob >= 0.5).astype(int)
-
-    accuracy = accuracy_score(y_test, y_pred)
-    auc_score = roc_auc_score(y_test, y_prob)
-
-    return accuracy, auc_score, y_test, y_prob
-
-#FUNCTION TO RUN THE XGBOOST MODEL----------------------
-def run_xgboost(X_train, X_test, y_train, y_test):
-
-    #MODEL 4: XGBOOST
-    model = XGBClassifier(
-        n_estimators=100,
-        max_depth=6,
-        learning_rate=0.1,
-        random_state=42,
-        eval_metric="logloss"
-    )
-
-    #Training the Model
-    model.fit(X_train, y_train)
-
-    #Predicting the Y Labels
-    y_prob = model.predict_proba(X_test)[:,1]
-
-    #AUC-ROC  and Accuracy Score
-    y_pred = (y_prob >= 0.5).astype(int)
-
-    accuracy = accuracy_score(y_test, y_pred)
-    auc_score = roc_auc_score(y_test, y_prob)
-
-    return accuracy, auc_score, y_test, y_prob
-
-#FUNCTION TO RUN DUMMY CLASSIFIER ----------------------
-def run_dummy(X_train, X_test, y_train, y_test):
-
-    #Dummy classifier uses the most frequent class
-    model = DummyClassifier(strategy="stratified", random_state=42)
-
-    #Training
-    model.fit(X_train, y_train)
-
-    #Prediction probabilities
-    y_prob = model.predict_proba(X_test)[:,1]
-
-    #AUC-ROC  and Accuracy Score
-    y_pred = (y_prob >= 0.5).astype(int)
-
-    accuracy = accuracy_score(y_test, y_pred)
-    auc_score = roc_auc_score(y_test, y_prob)
-
-    return accuracy, auc_score, y_test, y_prob
-
 #MAIN BODY
 start_time = time.time()
 
@@ -477,13 +303,13 @@ for file in files:
     print("\nPARTICIPANT : ", participant)
 
     #FEATURES EXTRACTED
-    X, y = get_features_labels(file)
+    X, y, feature_names = get_features_labels(file)
 
     #RUNNIGN THE CLUSTERING
     best_k, silhouette, cluster_labels, silhouette_scores = run_clustering( X, y, participant)
 
     #SAVING SUMMARY RESULTS
-    clustering_results.append({ "Participant": participant, "Best_K": best_k, "Silhouette_Score": silhouette})
+    clustering_results.append({"Participant": participant, "K2_Silhouette": silhouette_scores.get(2), "K3_Silhouette": silhouette_scores.get(3), "K4_Silhouette": silhouette_scores.get(4), "K5_Silhouette": silhouette_scores.get(5), "Best_K": best_k, "Best_Silhouette": silhouette})
 
 #FINAL CLUSTERING RESULTS
 summary = pd.DataFrame(clustering_results)
