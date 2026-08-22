@@ -220,21 +220,22 @@ def run_clustering(X, y, participant):
     explained_variance = pca.explained_variance_ratio_ * 100
     print("\nPCA VARIANCE EXPLAINED :", round(explained_variance[0], 2), "%" , "+" , round(explained_variance[1], 2), "%")
 
-    #CLUSTER GROUP CREATED
+    #CLUSTER GROUP + TRUE CLASS VISUALISATION
     plt.figure(figsize=(9, 7))
 
-    for cluster in range(best_k):
+    for true_class in [0, 1]:
+        for cluster in range(best_k):
 
-        cluster_points = cluster_labels == cluster
+            points = (y == true_class) & (cluster_labels == cluster)
 
-        plt.scatter(
-            X_pca[cluster_points, 0],
-            X_pca[cluster_points, 1],
-            label="Cluster " + str(cluster),
-            alpha=0.7
-        )
+            plt.scatter(
+                X_pca[points, 0],
+                X_pca[points, 1],
+                label="Class " + str(true_class) + " - Cluster " + str(cluster),
+                alpha=0.7
+            )
 
-    #CLUSTER CENTERS PLOTTED
+    #CLUSTER CENTRES PLOTTED
     cluster_centres_pca = pca.transform(kmeans.cluster_centers_)
 
     plt.scatter(
