@@ -164,7 +164,7 @@ def get_features_labels(file_path):
 
     return X, y, feature_names
 
-def get_shap_top_features(X_train_scaled, y_train, feature_names, n_features=60):
+def get_shap_top_features(X_train_scaled, y_train, feature_names, n_features=10):
 
     #XGBoost used to get SHAP Values
     model = XGBClassifier(
@@ -410,7 +410,7 @@ for file in files:
         X_test_scaled = scaler.transform(X_test)
 
         #SHAP FEATURE SELECTION
-        selected_indices, selected_features = get_shap_top_features(X_train_scaled, y_train, feature_names, n_features=10)
+        selected_indices, selected_features = get_shap_top_features(X_train_scaled, y_train, feature_names, n_features=60)
 
         #SELECTING THE REQUIRED SHAP FEATURES ONLY:
         X_train_selected = X_train_scaled[:, selected_indices]
