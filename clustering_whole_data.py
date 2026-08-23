@@ -368,30 +368,19 @@ X_pca = pca.fit_transform(X_scaled)
 #PERCENTAGE OF VARIANCE EXPLAINED
 explained_variance = pca.explained_variance_ratio_ * 100
 
-print(
-    "\nPCA VARIANCE EXPLAINED :",
-    round(explained_variance[0], 2),
-    "%",
-    "+",
-    round(explained_variance[1], 2),
-    "%"
-)
-
-#COMBINED CLUSTER GRAPH
+#COMBINED CLASS GRAPH
 plt.figure(figsize=(10, 8))
 
 for true_class in [0, 1]:
 
-    for cluster in range(best_k):
+    points = y_all == true_class
 
-        points = (y_all == true_class) & (cluster_labels == cluster)
-
-        plt.scatter(
-            X_pca[points, 0],
-            X_pca[points, 1],
-            label="Class " + str(true_class) + " - Cluster " + str(cluster),
-            alpha=0.7
-        )
+    plt.scatter(
+        X_pca[points, 0],
+        X_pca[points, 1],
+        label="Class " + str(true_class),
+        alpha=0.7
+    )
 
 #CLUSTER CENTRES PLOTTED
 cluster_centres_pca = pca.transform(kmeans.cluster_centers_)
@@ -425,73 +414,6 @@ plt.savefig(
 plt.close()
 
 print("Combined clustering graph saved:", graph_path)
-
-#COMBINED CSV CREATED
-combined_data = pd.DataFrame()
-
-combined_data["Participant"] = all_participants
-combined_data["Epoch"] = all_epochs
-combined_data["Class"] = "Class " + y_all.astype(str)
-combined_data["Cluster"] = cluster_labels
-combined_data["PCA_1"] = X_pca[:, 0]
-combined_data["PCA_2"] = X_pca[:, 1]
-
-#CSV SAVED
-combined_path = os.path.join(
-    clustering_folder,
-    "all_participants_clusters.csv"
-)
-
-combined_data.to_csv(
-    combined_path,
-    index=False
-)
-
-print("Combined cluster data saved:", combined_path)
-
-#COMPARING CLUSTERS WITH TRUE CLASSES
-print("\nCLUSTER VS TRUE CLASS")
-
-cluster_table = pd.crosstab(
-    combined_data["Cluster"],
-    combined_data["Class"]
-)
-
-print(cluster_table)
-
-#CLUSTER VS CLASS CSV
-cluster_table_path = os.path.join(
-    clustering_folder,
-    "cluster_vs_class.csv"
-)
-
-cluster_table.to_csv(
-    cluster_table_path
-)
-
-print("Cluster vs class table saved:", cluster_table_path)
-
-#FINAL CLUSTERING RESULTS
-summary = pd.DataFrame({
-    "K": list(silhouette_scores.keys()),
-    "Silhouette_Score": list(silhouette_scores.values())
-})
-
-summary["Best_K"] = best_k
-summary["Final_Silhouette"] = final_silhouette
-
-#SUMMARY CSV SAVED
-summary_path = os.path.join(
-    clustering_folder,
-    "combined_clustering_summary.csv"
-)
-
-summary.to_csv(
-    summary_path,
-    index=False
-)
-
-print("Summary saved:", summary_path)
 
 #TIME TO RUN PROGRAM
 end_time = time.time()
