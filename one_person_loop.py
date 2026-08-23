@@ -119,16 +119,33 @@ def get_features_labels(file_path):
     #Getting PSD Features
     psds, psd_features = get_psd_features(epochs)
 
-    #The Y Labels
-    encoder = LabelEncoder()
-    y = encoder.fit_transform(epochs.events[:, -1])
-    
     #MNE Features (Experiment 5)
     mne_features = get_mne_features(epochs)
 
-    #X = mne_features
     #Combining PSD + MNE Features (Experiment 6)
     X = np.concatenate((psd_features, mne_features), axis=1)
+
+    #The Y Labels
+    encoder = LabelEncoder()
+    y = encoder.fit_transform(epochs.events[:, -1])
+
+    # TEMPORAL FEATURES
+    #Previous trial's EEG features
+    X_previous = np.zeros_like(X)
+    X_previous[1:] = X[:-1]
+
+    #Change in EEG features from previous trial to current trial
+    X_difference = np.zeros_like(X)
+    X_difference[1:] = X[1:] - X[:-1]
+
+    #Removing first trial because it has no previous trial
+    X = X[1:]
+    X_previous = X_previous[1:]
+    X_difference = X_difference[1:]
+    y = y[1:]
+
+    #Combining current + previous + difference features
+    X = np.concatenate((X, X_previous, X_difference), axis=1)
 
     #Creating names for every feature
     feature_names = []
@@ -142,7 +159,7 @@ def get_features_labels(file_path):
                 "PSD_" + channel + "_" + str(round(frequency, 1)) + "Hz"
             )
 
-   #Names of the MNE features
+    #Names of the MNE features
     mne_feature_names = [
         "line_length",
         "kurtosis",
@@ -160,6 +177,14 @@ def get_features_labels(file_path):
     for feature in mne_feature_names:
         for channel in channels:
             feature_names.append(channel + "_" + feature)
+
+    #Adding names for temporal features
+    original_feature_names = feature_names.copy()
+
+    previous_feature_names = ["PREV_" + name for name in original_feature_names]
+    difference_feature_names = ["DIFF_" + name for name in original_feature_names]
+
+    feature_names = original_feature_names + previous_feature_names + difference_feature_names
 
     print("FEATURE SHAPE :", X.shape)
 
