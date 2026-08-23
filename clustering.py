@@ -268,7 +268,7 @@ def run_clustering(X, y, participant):
     cluster_data = pd.DataFrame()
 
     cluster_data["Epoch"] = np.arange(len(y))
-    cluster_data["True_Label"] = y
+    cluster_data["Class"] = "Class " + y.astype(str)
     cluster_data["Cluster"] = cluster_labels
     cluster_data["PCA_1"] = X_pca[:, 0]
     cluster_data["PCA_2"] = X_pca[:, 1]
