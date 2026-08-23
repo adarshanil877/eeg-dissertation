@@ -312,6 +312,24 @@ for file in files:
     #SAVING SUMMARY RESULTS
     clustering_results.append({"Participant": participant, "K2_Silhouette": silhouette_scores.get(2), "K3_Silhouette": silhouette_scores.get(3), "K4_Silhouette": silhouette_scores.get(4), "K5_Silhouette": silhouette_scores.get(5), "Best_K": best_k, "Best_Silhouette": silhouette})
 
+# COMBINE ALL PARTICIPANT CSV FILES
+all_cluster_data = []
+
+for file in files:
+    participant = os.path.basename(file).replace("_cleaned.set", "")
+    csv_path = os.path.join(clustering_folder, participant, participant + "_clusters.csv")
+
+    data = pd.read_csv(csv_path)
+    data.insert(0, "Participant", participant)
+    all_cluster_data.append(data)
+
+combined_data = pd.concat(all_cluster_data, ignore_index=True)
+
+combined_path = os.path.join(clustering_folder, "all_participants_clusters.csv")
+combined_data.to_csv(combined_path, index=False)
+
+print("\nAll participant cluster data saved:", combined_path)
+
 #FINAL CLUSTERING RESULTS
 summary = pd.DataFrame(clustering_results)
 print("\nFINAL CLUSTERING RESULTS")
