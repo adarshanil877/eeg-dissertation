@@ -95,7 +95,7 @@ def get_features_labels(file_path):
     raw = raw.copy().filter(1, 40)
 
     #Selecting only frontal EEG channels
-    channels = ["Fz", "FCz", "F2"]
+    channels = ["Fz", "FCz", "F2", "F4", "F3", "F6"]
     raw = raw.pick(channels)
 
     #Creating events based on conditions present on data
@@ -273,6 +273,7 @@ def run_random_forest(X_train, X_test, y_train, y_test):
     #MODEL 3: RANDOM FOREST
     model = RandomForestClassifier(
         n_estimators=50,
+        max_depth=None,
         random_state=42
     )
 
