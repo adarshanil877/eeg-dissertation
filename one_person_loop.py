@@ -197,15 +197,29 @@ def get_shap_top_features(X_train_scaled, y_train, feature_names, n_features=10)
 
 def run_voting(X_train, X_test, y_train, y_test):
 
-    clf1 = LogisticRegression(C=0.1, max_iter=1000, random_state=42)
-    clf2 = RandomForestClassifier(n_estimators=50, random_state=42)
-    clf3 = SVC(kernel="linear", probability=True, random_state=42)
+    clf1 = LinearDiscriminantAnalysis()
+    clf2 = CalibratedClassifierCV(
+        SVC(kernel="linear", random_state=42),
+        method="sigmoid",
+        cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    )
+    clf3 = LogisticRegression(C=0.1, max_iter=1000, random_state=42)
+    clf4 = RandomForestClassifier(n_estimators=50, random_state=42)
+    clf5 = XGBClassifier(
+        n_estimators=100,
+        max_depth=6,
+        learning_rate=0.1,
+        random_state=42,
+        eval_metric="logloss"
+    )
 
     voting_clf = VotingClassifier(
         estimators=[
-            ("lr", clf1),
-            ("rf", clf2),
-            ("svc", clf3)
+            ("lda", clf1),
+            ("svm", clf2),
+            ("lr", clf3),
+            ("rf", clf4),
+            ("xgb", clf5)
         ],
         voting="soft"
     )
@@ -527,26 +541,26 @@ for file in files:
     accuracy_results["DUMMY"].append(participant_dummy_accuracy)
 
     #PRINTING RESULTS FOR PARTICIPANT
-    print("LDA AUC :", round(participant_lda, 4), "          ACC :", round(participant_lda_accuracy, 4))
-    print("SVM AUC :", round(participant_svm, 4), "          ACC :", round(participant_svm_accuracy, 4))
-    print("LOGISTIC AUC :", round(participant_log, 4), "     ACC :", round(participant_log_accuracy, 4))
+    print("LDA AUC :", round(participant_lda, 4), " ACC :", round(participant_lda_accuracy, 4))
+    print("SVM AUC :", round(participant_svm, 4), " ACC :", round(participant_svm_accuracy, 4))
+    print("LOGISTIC AUC :", round(participant_log, 4), " ACC :", round(participant_log_accuracy, 4))
     print("RANDOM FOREST AUC :", round(participant_rf, 4), " ACC :", round(participant_rf_accuracy, 4))
-    print("XGBOOST AUC :", round(participant_xgb, 4), "      ACC :", round(participant_xgb_accuracy, 4))
-    print("VOTING AUC :", round(participant_voting, 4), "    ACC :", round(participant_voting_accuracy, 4))
-    print("DUMMY AUC :", round(participant_dummy, 4), "      ACC :", round(participant_dummy_accuracy, 4))
+    print("XGBOOST AUC :", round(participant_xgb, 4), " ACC :", round(participant_xgb_accuracy, 4))
+    print("VOTING AUC :", round(participant_voting, 4), " ACC :", round(participant_voting_accuracy, 4))
+    print("DUMMY AUC :", round(participant_dummy, 4), " ACC :", round(participant_dummy_accuracy, 4))
 
 #OVERALL AUC RESULTS
 print("\nFINAL PARTICIPANT RESULTS")
 for i, file in enumerate(files):
     participant = os.path.basename(file).replace("_cleaned.set", "")
     print( participant,
-        "LDA AUC :", round(results["LDA"][i], 4), "          ACC :", round(accuracy_results["LDA"][i], 4),
-        "SVM AUC :", round(results["SVM"][i], 4), "          ACC :", round(accuracy_results["SVM"][i], 4),
-        "LOGISTIC AUC :", round(results["LOGISTIC"][i], 4), "ACC :", round(accuracy_results["LOGISTIC"][i], 4),
+        "LDA AUC :", round(results["LDA"][i], 4), " ACC :", round(accuracy_results["LDA"][i], 4),
+        "SVM AUC :", round(results["SVM"][i], 4), " ACC :", round(accuracy_results["SVM"][i], 4),
+        "LOGISTIC AUC :", round(results["LOGISTIC"][i], 4), " ACC :", round(accuracy_results["LOGISTIC"][i], 4),
         "RF AUC :", round(results["RANDOM FOREST"][i], 4), " ACC :", round(accuracy_results["RANDOM FOREST"][i], 4),
-        "XGB AUC :", round(results["XGBOOST"][i], 4), "      ACC :", round(accuracy_results["XGBOOST"][i], 4),
-        "VOTING AUC :", round(results["VOTING"][i], 4), "    ACC :", round(accuracy_results["VOTING"][i], 4),
-        "DUMMY AUC :", round(results["DUMMY"][i], 4), "      ACC :", round(accuracy_results["DUMMY"][i], 4)
+        "XGB AUC :", round(results["XGBOOST"][i], 4), " ACC :", round(accuracy_results["XGBOOST"][i], 4),
+        "VOTING AUC :", round(results["VOTING"][i], 4), " ACC :", round(accuracy_results["VOTING"][i], 4),
+        "DUMMY AUC :", round(results["DUMMY"][i], 4), " ACC :", round(accuracy_results["DUMMY"][i], 4)
     )
 
 #STATISTICAL ANALYSIS
