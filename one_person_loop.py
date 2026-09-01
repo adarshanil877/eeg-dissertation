@@ -21,6 +21,7 @@ from xgboost import XGBClassifier
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import StratifiedKFold
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import VotingClassifier
 
 #IMPORTING EVALUATION METRICS
 from sklearn.metrics import accuracy_score,confusion_matrix, ConfusionMatrixDisplay, roc_auc_score, auc, roc_curve
@@ -194,6 +195,31 @@ def get_shap_top_features(X_train_scaled, y_train, feature_names, n_features=10)
 
     return selected_indices, selected_features
 
+def run_voting(X_train, X_test, y_train, y_test):
+
+    clf1 = LogisticRegression(C=0.1, max_iter=1000, random_state=42)
+    clf2 = RandomForestClassifier(n_estimators=50, random_state=42)
+    clf3 = SVC(kernel="linear", probability=True, random_state=42)
+
+    voting_clf = VotingClassifier(
+        estimators=[
+            ("lr", clf1),
+            ("rf", clf2),
+            ("svc", clf3)
+        ],
+        voting="soft"
+    )
+
+    voting_clf.fit(X_train, y_train)
+
+    y_prob = voting_clf.predict_proba(X_test)[:, 1]
+    y_pred = (y_prob >= 0.5).astype(int)
+
+    accuracy = accuracy_score(y_test, y_pred)
+    auc_score = roc_auc_score(y_test, y_prob)
+
+    return accuracy, auc_score, y_test, y_prob
+
 #FUNCTION TO RUN THE LDA MODEL----------------------
 def run_lda(X_train, X_test, y_train, y_test):
 
@@ -358,6 +384,17 @@ results = {
     "LOGISTIC": [],
     "RANDOM FOREST": [],
     "XGBOOST": [],
+    "VOTING": [],
+    "DUMMY": []
+}
+
+accuracy_results = {
+    "LDA": [],
+    "SVM": [],
+    "LOGISTIC": [],
+    "RANDOM FOREST": [],
+    "XGBOOST": [],
+    "VOTING": [],
     "DUMMY": []
 }
 
@@ -370,8 +407,11 @@ for file in files:
     all_rf_prob = []
     all_xgb_prob = []
     all_log_prob = []
+    all_voting_prob = []
     all_dummy_prob = []
     fold_auc_results = []
+
+
 
     participant = os.path.basename(file).replace("_cleaned.set", "")
 
@@ -434,6 +474,9 @@ for file in files:
         #Running Logistic Regression
         log_accuracy, log_auc, log_y, log_prob = run_logistic_regression(X_train_selected, X_test_selected, y_train, y_test)
 
+        #Running Voting Classifier
+        voting_accuracy, voting_auc, voting_y, voting_prob = run_voting(X_train_selected, X_test_selected, y_train, y_test)
+
         #Running Dummy Classifier
         dummy_accuracy, dummy_auc, dummy_y, dummy_prob = run_dummy(X_train_selected, X_test_selected, y_train, y_test)
         
@@ -444,6 +487,7 @@ for file in files:
         all_log_prob.extend(log_prob)
         all_rf_prob.extend(rf_prob)
         all_xgb_prob.extend(xgb_prob)
+        all_voting_prob.extend(voting_prob)
         all_dummy_prob.extend(dummy_prob)
 
     #OVERALL APRTICIPANT AUC
@@ -452,42 +496,103 @@ for file in files:
     participant_log = roc_auc_score(all_y_true, all_log_prob)
     participant_rf = roc_auc_score(all_y_true, all_rf_prob)
     participant_xgb = roc_auc_score(all_y_true, all_xgb_prob)
+    participant_voting = roc_auc_score(all_y_true, all_voting_prob)
     participant_dummy = roc_auc_score(all_y_true, all_dummy_prob)
 
-    #SAVING RESULTS
+    #OVERALL PARTICIPANT ACC
+    participant_lda_accuracy = accuracy_score(all_y_true, (np.array(all_lda_prob) >= 0.5).astype(int))
+    participant_svm_accuracy = accuracy_score(all_y_true, (np.array(all_svm_prob) >= 0.5).astype(int))
+    participant_log_accuracy = accuracy_score(all_y_true, (np.array(all_log_prob) >= 0.5).astype(int))
+    participant_rf_accuracy = accuracy_score(all_y_true, (np.array(all_rf_prob) >= 0.5).astype(int))
+    participant_xgb_accuracy = accuracy_score(all_y_true, (np.array(all_xgb_prob) >= 0.5).astype(int))
+    participant_voting_accuracy = accuracy_score(all_y_true, (np.array(all_voting_prob) >= 0.5).astype(int))
+    participant_dummy_accuracy = accuracy_score(all_y_true, (np.array(all_dummy_prob) >= 0.5).astype(int))
+
+    #SAVING AUC RESULTS
     results["LDA"].append(participant_lda)
     results["SVM"].append(participant_svm)
     results["LOGISTIC"].append(participant_log)
     results["RANDOM FOREST"].append(participant_rf)
     results["XGBOOST"].append(participant_xgb)
+    results["VOTING"].append(participant_voting)
     results["DUMMY"].append(participant_dummy)
 
-    #PRINTING RESULTS FOR FIRST PARTICIPANT
-    print("LDA AUC :", round(participant_lda, 4))
-    print("SVM AUC :", round(participant_svm, 4))
-    print("LOGISTIC AUC :", round(participant_log, 4))
-    print("RANDOM FOREST AUC :", round(participant_rf, 4))
-    print("XGBOOST AUC :", round(participant_xgb, 4))
-    print("DUMMY AUC :", round(participant_dummy, 4))
+    #SAVING ACCURACY RESULTS
+    accuracy_results["LDA"].append(participant_lda_accuracy)
+    accuracy_results["SVM"].append(participant_svm_accuracy)
+    accuracy_results["LOGISTIC"].append(participant_log_accuracy)
+    accuracy_results["RANDOM FOREST"].append(participant_rf_accuracy)
+    accuracy_results["XGBOOST"].append(participant_xgb_accuracy)
+    accuracy_results["VOTING"].append(participant_voting_accuracy)
+    accuracy_results["DUMMY"].append(participant_dummy_accuracy)
+
+    #PRINTING RESULTS FOR PARTICIPANT
+    print("LDA AUC :", round(participant_lda, 4), "          ACC :", round(participant_lda_accuracy, 4))
+    print("SVM AUC :", round(participant_svm, 4), "          ACC :", round(participant_svm_accuracy, 4))
+    print("LOGISTIC AUC :", round(participant_log, 4), "     ACC :", round(participant_log_accuracy, 4))
+    print("RANDOM FOREST AUC :", round(participant_rf, 4), " ACC :", round(participant_rf_accuracy, 4))
+    print("XGBOOST AUC :", round(participant_xgb, 4), "      ACC :", round(participant_xgb_accuracy, 4))
+    print("VOTING AUC :", round(participant_voting, 4), "    ACC :", round(participant_voting_accuracy, 4))
+    print("DUMMY AUC :", round(participant_dummy, 4), "      ACC :", round(participant_dummy_accuracy, 4))
 
 #OVERALL AUC RESULTS
 print("\nFINAL PARTICIPANT RESULTS")
 for i, file in enumerate(files):
     participant = os.path.basename(file).replace("_cleaned.set", "")
-    print(participant,
-        "LDA : ", round(results["LDA"][i], 4),
-        "SVM : ", round(results["SVM"][i], 4),
-        "LOGISTIC : ", round(results["LOGISTIC"][i], 4),
-        "RF : ", round(results["RANDOM FOREST"][i], 4),
-        "XGB : ", round(results["XGBOOST"][i], 4),
-        "DUMMY : ", round(results["DUMMY"][i], 4)
+    print( participant,
+        "LDA AUC :", round(results["LDA"][i], 4), "          ACC :", round(accuracy_results["LDA"][i], 4),
+        "SVM AUC :", round(results["SVM"][i], 4), "          ACC :", round(accuracy_results["SVM"][i], 4),
+        "LOGISTIC AUC :", round(results["LOGISTIC"][i], 4), "ACC :", round(accuracy_results["LOGISTIC"][i], 4),
+        "RF AUC :", round(results["RANDOM FOREST"][i], 4), " ACC :", round(accuracy_results["RANDOM FOREST"][i], 4),
+        "XGB AUC :", round(results["XGBOOST"][i], 4), "      ACC :", round(accuracy_results["XGBOOST"][i], 4),
+        "VOTING AUC :", round(results["VOTING"][i], 4), "    ACC :", round(accuracy_results["VOTING"][i], 4),
+        "DUMMY AUC :", round(results["DUMMY"][i], 4), "      ACC :", round(accuracy_results["DUMMY"][i], 4)
     )
 
-#AVERAGE AUC FOR EACH MODEL
+#STATISTICAL ANALYSIS
 print("\nAVERAGE AUC")
 for model_name in results:
-    average_auc = np.mean(results[model_name])
-    print(model_name, ":", round(average_auc, 4))
+    print(model_name, ":", round(np.mean(results[model_name]), 4))
+
+print("\nMEDIAN AUC")
+for model_name in results:
+    print(model_name, ":", round(np.median(results[model_name]), 4))
+
+print("\nAVERAGE ACCURACY")
+for model_name in accuracy_results:
+    print(model_name, ":", round(np.mean(accuracy_results[model_name]), 4))
+
+print("\nMEDIAN ACCURACY")
+for model_name in accuracy_results:
+    print(model_name, ":", round(np.median(accuracy_results[model_name]), 4))
+
+#MODEL VS DUMMY
+print("\nMODEL VS DUMMY")
+
+dummy_auc_mean = np.mean(results["DUMMY"])
+dummy_acc_mean = np.mean(accuracy_results["DUMMY"])
+
+for model_name in results:
+    if model_name != "DUMMY":
+        auc_difference = np.mean(results[model_name]) - dummy_auc_mean
+        acc_difference = np.mean(accuracy_results[model_name]) - dummy_acc_mean
+
+        auc_better = sum(
+            model_auc > dummy_auc
+            for model_auc, dummy_auc in zip(results[model_name], results["DUMMY"])
+        )
+
+        acc_better = sum(
+            model_acc > dummy_acc
+            for model_acc, dummy_acc in zip(accuracy_results[model_name], accuracy_results["DUMMY"])
+        )
+
+        print(model_name)
+        print("  AUC difference from DUMMY :", round(auc_difference, 4))
+        print("  ACC difference from DUMMY :", round(acc_difference, 4))
+        print("  Participants with higher AUC than DUMMY :", auc_better, "/", len(files))
+        print("  Participants with higher ACC than DUMMY :", acc_better, "/", len(files))
+
 
 #TIME TO RUN PROGRAM
 end_time = time.time()
