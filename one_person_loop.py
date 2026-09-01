@@ -567,7 +567,7 @@ for model_name in accuracy_results:
     print(model_name, ":", round(np.median(accuracy_results[model_name]), 4))
 
 #MODEL VS DUMMY
-print("\nMODEL VS DUMMY")
+print("\n\nMODEL VS DUMMY")
 
 dummy_auc_mean = np.mean(results["DUMMY"])
 dummy_acc_mean = np.mean(accuracy_results["DUMMY"])
@@ -588,10 +588,10 @@ for model_name in results:
         )
 
         print(model_name)
-        print("  AUC difference from DUMMY :", round(auc_difference, 4))
-        print("  ACC difference from DUMMY :", round(acc_difference, 4))
-        print("  Participants with higher AUC than DUMMY :", auc_better, "/", len(files))
-        print("  Participants with higher ACC than DUMMY :", acc_better, "/", len(files))
+        print("  AUC DIFFERENCE FROM DUMMY : ", round(auc_difference, 4))
+        print("  ACC DIFFERENCE FROM DUMMY : ", round(acc_difference, 4))
+        print("  PARTICIPANTS WITH HIGHER AUC THAN DUMMY : ", auc_better, "/", len(files))
+        print("  PARTICIPANTS WITH HIGHER ACC THAN DUMMY : ", acc_better, "/", len(files))
 
 
 #TIME TO RUN PROGRAM
