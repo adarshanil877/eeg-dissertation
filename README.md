@@ -2,9 +2,9 @@
 
 ## MSc Dissertation Project
 
-This repository holds the source code that was written as part of my MSc dissertation at the University of Sheffield.
+This repository contains the source code developed as part of my MSc dissertation at the University of Sheffield.
 
-The goal of this project is to explore the possibility of predicting behavioural patterns from EEG signals by means of machine learning. The pipeline of the project involves EEG analysis, which consists of signal pre-processing, feature extraction, feature selection via SHAP, and classification.
+The aim of this project is to investigate whether behavioural responses can be predicted from EEG activity recorded before the behavioural response using machine learning. The analysis pipeline involves EEG signal processing, feature extraction, feature selection using SHAP, classification, cross-validation, cross-participant evaluation, and exploratory clustering.
 
 ---
 
@@ -12,27 +12,36 @@ The goal of this project is to explore the possibility of predicting behavioural
 
 The workflow of the project is:
 
-1. Loading raw EEG recordings.
-2. EEG signal preprocessing.
-3. Feature extraction in frequency domain and time domain.
-4. Conducting Leave-One-Subject-Out (LOSO) test.
-5. Estimating SHAP feature importance for each participant.
-6. Selection of top features.
-7. Retraining classifiers based on selected features.
-8. Classification performance comparison by AUC-ROC score.
+1. Loading preprocessed EEG recordings.
+2. Filtering EEG signals between 1-40 Hz.
+3. Selecting relevant frontal EEG channels.
+4. Creating epochs from -0.9 to 0 seconds before the behavioural response.
+5. Extracting frequency-domain and signal-derived features.
+6. Standardising the extracted features.
+7. Performing SHAP-based feature selection.
+8. Training multiple classification models.
+9. Evaluating within-participant classification performance.
+10. Conducting Leave-One-Subject-Out (LOSO) evaluation.
+11. Analysing SHAP feature importance.
+12. Performing exploratory clustering analysis.
+
+The primary objective of the project is to investigate whether pre-response EEG activity contains information that can be used to predict the subsequent behavioural response.
 
 ---
 
 ## EEG Preprocessing
 
-The data obtained through EEG is then processed through the MNE-Python library.
+The EEG data are processed using the MNE-Python library.
 
-The pre-processing steps include:
+The EEG recordings used by the final analysis are preprocessed EEG recordings stored in EEGLAB format.
 
-- Filtering of EEG data between 1-40Hz.
+The processing steps performed by the analysis scripts include:
+
+- Loading the cleaned EEG recordings.
+- Filtering EEG data between 1-40 Hz.
 - Selecting frontal EEG channels.
-- Defining epochs on the basis of events.
-- Isolating 1 second EEG data before extracting features from them.
+- Defining epochs based on behavioural events.
+- Extracting the EEG segment from -0.9 to 0 seconds before the response.
 
 The EEG channels used are:
 
@@ -43,24 +52,28 @@ The EEG channels used are:
 - F4
 - F6
 
+The final analysis contains data from 11 participants and 800 usable epochs.
+
 ---
 
 ## Repository Structure
 
-| File | Description |
+| File / Directory | Description |
 |------|-------------|
-| `preprocess.py` | Functions for EEG pre-processing |
-| `filter.py` | Signal filtering tools |
-| `learning_psd.py` | EEG feature extraction experiments |
-| `loocv.py` | Leave-one-out training & evaluation framework  |
-| `shap_imp.py` | Calculate SHAP feature importances for all subjects |
-| `overall_shap_importance.csv` | SHAP feature importances summary |
-| `imp_features_run.py` | Classifiers retraining on SHAP selected features |
-| `testing_features.py` | Experiment with various feature selection techniques |
-| `single_participant_acc.py` | Single subject evaluation |
-| `all_participants_acc.py` |  Participants’ evaluation |
-| `test.py` | General utility testing file |
-| `test_load.py` | Test EEG data loading |
+| `one_person_loop.py` | Within-participant classification using 5-fold stratified cross-validation |
+| `looc_main.py` | Leave-One-Subject-Out (LOSO) classification and evaluation |
+| `main_shap_analysis.py` | Participant-level XGBoost SHAP analysis |
+| `shap_imp.py` | Random Forest SHAP analysis using the LOSO framework |
+| `clustering.py` | Participant-level K-Means clustering and PCA visualisation |
+| `clustering_whole.py` | Combined K-Means clustering analysis across all participants |
+| `data/` | Directory containing the preprocessed EEG `.set` and `.fdt` files |
+| `shap_analysis/` | Directory containing SHAP analysis outputs |
+| `clustering_results/` | Directory containing participant-level clustering outputs |
+| `combined_clustering_results/` | Directory containing combined clustering outputs |
+| `model_auc_results.csv` | LOSO model ROC-AUC results |
+| `roc_curve.png` | ROC curve generated from the LOSO evaluation |
+| `overall_shap_importance.csv` | Overall SHAP feature-importance results |
+| `FEATURE_FREQUENCY_TOP_20.csv` | Frequency of features appearing among the most important SHAP features |
 
 ---
 
@@ -69,71 +82,276 @@ The EEG channels used are:
 The following classifiers are evaluated:
 
 - Linear Discriminant Analysis (LDA)
-- Support Vector Machine (SVM)
+- Linear Support Vector Machine (SVM)
+- Logistic Regression
 - Random Forest
 - XGBoost
+- Soft Voting Classifier
+- Dummy Classifier
 
 Performance is evaluated using:
 
-- Area Under the Receiver Operating Characteristic Curve (AUC-ROC)
+- Area Under the Receiver Operating Characteristic Curve (ROC-AUC)
+- Classification accuracy
+
+The Dummy Classifier is included as a baseline for comparison.
 
 ---
 
 ## Feature Extraction
 
-The extracted EEG features include frequency-domain and time-domain features.
+The extracted EEG features consist of frequency-domain and signal-derived features.
 
 ### Frequency-domain Features
 
-- Power Spectral Density (PSD)
+Welch Power Spectral Density (PSD) is calculated for the selected EEG channels.
 
-### Time-domain Features
+The PSD representation contains:
+
+- 6 EEG channels
+- 36 frequency points per channel
+- 216 PSD features in total
+
+### Signal-derived Features
+
+The following signal-derived features are extracted:
 
 - Line Length
-- Skewness
 - Kurtosis
-- Approximate Entropy
-- Sample Entropy
-- Spectral Entropy
-- SVD Entropy
+- Skewness
 - Hjorth Mobility
 - Hjorth Complexity
+- Zero Crossings
+- Spectral Entropy
+- SVD Entropy
+- Approximate Entropy
+- Sample Entropy
+
+These features provide:
+
+- 6 EEG channels
+- 10 features per channel
+- 60 signal-derived features in total
+
+Therefore, the complete feature representation contains:
+
+216 PSD features + 60 signal-derived features = 276 features.
+
+---
+
+## Feature Scaling
+
+The extracted features are standardised using `StandardScaler`.
+
+For the within-participant classification pipeline, scaling is performed within each cross-validation fold.
+
+The scaler is fitted using the training portion of the fold and is then used to transform the corresponding validation portion.
+
+This prevents information from the held-out validation fold from being used when fitting the scaler.
 
 ---
 
 ## Feature Selection Using SHAP
 
-Feature selection is done by using SHAP (SHapley Additive exPlanations).
+Feature selection is performed using SHAP (SHapley Additive exPlanations).
 
-This involves the following steps:
+For the main classification pipeline, an XGBoost classifier is used to estimate feature importance within each training fold.
 
-1. Train the models with the extracted EEG features.
-2. Compute SHAP feature importance scores.
-3. Compute the average feature importance over the participants.
-4. Rank the features based on the average SHAP importance.
-5. Retrain the models with varying number of selected features.
+The feature-selection process involves:
 
-Some of the feature subsets used include:
+1. Training an XGBoost model using the training data.
+2. Calculating SHAP values.
+3. Calculating the mean absolute SHAP value for each feature.
+4. Ranking features according to their SHAP importance.
+5. Selecting the top 60 features.
+6. Training the classification models using the selected features.
 
-- The top 5 features
-- The top 10 features
-- The top 15 features
-- The top 20 features
-- Others
+SHAP-based feature selection is performed using the training data within each cross-validation fold.
+
+This prevents the held-out validation fold from being used for feature selection.
+
+SHAP values are also analysed separately to investigate the contribution of individual EEG features to model predictions.
+
+SHAP values represent model feature contributions and are not interpreted as evidence of causal relationships.
+
+---
+
+## Within-Participant Evaluation
+
+Each participant is evaluated separately using stratified 5-fold cross-validation.
+
+The cross-validation configuration is:
+
+    5 folds
+    Shuffle = True
+    Random State = 42
+
+For each participant:
+
+1. EEG features are extracted.
+2. The participant's data are divided into five stratified folds.
+3. The feature scaler is fitted using the training fold.
+4. The training data are used for SHAP-based feature selection.
+5. The selected features are used to train the classification models.
+6. Predictions are generated for the held-out fold.
+7. Predictions from all five folds are combined.
+8. Accuracy and ROC-AUC are calculated.
+
+The resulting participant-level metrics are then used to calculate the overall model performance across participants.
+
+---
+
+## Leave-One-Subject-Out Evaluation
+
+Leave-One-Subject-Out (LOSO) evaluation is used to investigate cross-participant generalisation.
+
+For each iteration:
+
+    1 participant = test set
+    All remaining participants = training set
+
+The process is repeated until every participant has been used as the held-out participant.
+
+The LOSO analysis produces ROC-AUC results for each model and held-out participant.
+
+This experiment evaluates whether patterns learned from other participants can be applied to an unseen participant.
+
+The script is named `looc_main.py`, but the implemented evaluation is Leave-One-Subject-Out rather than Leave-One-Observation-Out.
+
+---
+
+## SHAP Analysis
+
+Separate SHAP analyses are performed to investigate feature contributions to model predictions.
+
+The analysis includes:
+
+- Mean absolute SHAP importance
+- Participant-level feature importance
+- Overall feature importance
+- Top-ranked features
+- Lowest-ranked features
+- SHAP summary plots
+- SHAP beeswarm plots
+- SHAP waterfall plots
+- Feature-importance plots
+- Feature-frequency analysis
+
+The main participant-level SHAP analysis uses XGBoost.
+
+A separate LOSO SHAP analysis uses Random Forest.
+
+The SHAP analysis produces feature-level outputs that can be used to investigate which EEG features contribute most strongly to the model predictions.
+
+---
+
+## Exploratory Clustering
+
+K-Means clustering is used as an exploratory analysis of the extracted EEG feature representations.
+
+The following numbers of clusters are evaluated:
+
+- K = 2
+- K = 3
+- K = 4
+- K = 5
+
+Silhouette scores are calculated for the different cluster configurations.
+
+Principal Component Analysis (PCA) is used to project the feature representations into two dimensions for visualisation.
+
+### Participant-Level Clustering
+
+The `clustering.py` script performs clustering separately for each participant.
+
+For each participant:
+
+1. EEG features are extracted.
+2. Features are standardised.
+3. K-Means clustering is performed for K = 2 to K = 5.
+4. Silhouette scores are calculated.
+5. The clustering configuration is selected based on the silhouette score.
+6. PCA is used to produce a two-dimensional visualisation.
+7. Cluster assignments and summary results are saved.
+
+The results are stored in:
+
+    clustering_results/
+
+A summary CSV file is also generated.
+
+### Combined Clustering
+
+The `clustering_whole.py` script combines the feature representations from all participants before performing K-Means clustering.
+
+The analysis evaluates:
+
+- K = 2
+- K = 3
+- K = 4
+- K = 5
+
+PCA is then used to visualise the resulting clusters.
+
+The results are stored in:
+
+    combined_clustering_results/
+
+Clustering is treated as an exploratory analysis and is not part of the primary behavioural prediction evaluation.
 
 ---
 
 ## Dataset
 
-The EEG data will not be available within this repository because of privacy reasons.
+The EEG data are not included in this repository because of data privacy and availability restrictions.
 
-EEG data are expected to be stored under the following path:
+The analysis scripts expect the EEG files to be stored under:
 
-```
-data/
-```
+    data/
 
-The files should be named according to the participant naming convention used within the project.
+The EEG recordings are stored in EEGLAB format and require both the `.set` files and their corresponding `.fdt` files.
+
+Example:
+
+    data/
+    ├── c01_cleaned.set
+    ├── c01_cleaned.fdt
+    ├── c02_cleaned.set
+    ├── c02_cleaned.fdt
+    ├── c03_cleaned.set
+    ├── c03_cleaned.fdt
+    ├── c04_cleaned.set
+    ├── c04_cleaned.fdt
+    ├── c05_cleaned.set
+    ├── c05_cleaned.fdt
+    ├── c06_cleaned.set
+    ├── c06_cleaned.fdt
+    ├── c07_cleaned.set
+    ├── c07_cleaned.fdt
+    ├── c08_cleaned.set
+    ├── c08_cleaned.fdt
+    ├── c09_cleaned.set
+    ├── c09_cleaned.fdt
+    ├── c10_cleaned.set
+    ├── c10_cleaned.fdt
+    ├── c11_cleaned.set
+    └── c11_cleaned.fdt
+
+The participants included in the analysis are:
+
+    c01
+    c02
+    c03
+    c04
+    c05
+    c06
+    c07
+    c08
+    c09
+    c10
+    c11
+
+There are 800 usable epochs across the 11 participants.
 
 ---
 
@@ -141,59 +359,141 @@ The files should be named according to the participant naming convention used wi
 
 ### 1. Install Requirements
 
-Create a Python environment and install dependencies:
+Create a Python environment and install the required dependencies:
 
-```bash
-pip install -r requirements.txt
-```
+    pip install -r requirements.txt
 
 ---
 
-### 2. Run Baseline Classification Pipeline
-
-Run the original LOOCV:
-
-```bash
-python loocv.py
-```
-
----
-
-### 3. Generate SHAP Feature Importance
+### 2. Run Within-Participant Classification
 
 Run:
 
-```bash
-python shap_imp.py
-```
+    python one_person_loop.py
 
-This generates:
+This performs classification separately for each participant using 5-fold stratified cross-validation.
 
-```
-overall_shap_importance.csv
-```
+The models evaluated include:
 
-which contains the ranked feature importance values.
+- LDA
+- SVM
+- Logistic Regression
+- Random Forest
+- XGBoost
+- Voting Classifier
+- Dummy Classifier
+
+The analysis produces participant-level accuracy and ROC-AUC results.
 
 ---
 
-### 4. Run Classification with Selected Features
+### 3. Run LOSO Classification
 
 Run:
 
-```bash
-python imp_features_run.py
-```
+    python looc_main.py
 
-This trains and evaluates models using SHAP-selected features.
+This performs Leave-One-Subject-Out evaluation.
+
+Although the script name contains `looc`, the implemented evaluation is LOSO, where an entire participant is held out during each iteration.
+
+The analysis generates:
+
+    model_auc_results.csv
+    roc_curve.png
 
 ---
 
-## Current Results
+### 4. Run Participant-Level SHAP Analysis
 
-The first LOOCV tests resulted in an AUC-ROC of about 0.60.
+Run:
 
-The use of SHAP feature selection resulted in a decrease of input variables while achieving similar performance.
+    python main_shap_analysis.py
+
+This performs XGBoost SHAP analysis for each participant.
+
+The analysis generates:
+
+- SHAP feature values
+- Feature-importance results
+- Top feature rankings
+- SHAP summary plots
+- SHAP beeswarm plots
+- SHAP waterfall plots
+- Feature-frequency analysis
+
+The outputs are stored in:
+
+    shap_analysis/
+
+---
+
+### 5. Run Random Forest SHAP Analysis
+
+Run:
+
+    python shap_imp.py
+
+This performs Random Forest SHAP analysis within the LOSO framework.
+
+For each held-out participant, the Random Forest model is trained using the remaining participants and SHAP values are calculated for the held-out data.
+
+The analysis produces overall feature-importance results, including:
+
+    overall_shap_importance.csv
+
+---
+
+### 6. Run Participant-Level Clustering
+
+Run:
+
+    python clustering.py
+
+This performs K-Means clustering separately for each participant.
+
+The clustering results are stored in:
+
+    clustering_results/
+
+---
+
+### 7. Run Combined Clustering
+
+Run:
+
+    python clustering_whole.py
+
+This performs K-Means clustering using the combined feature data from all participants.
+
+The results are stored in:
+
+    combined_clustering_results/
+
+---
+
+## Output
+
+The analysis generates CSV files and visualisations depending on the script being executed.
+
+Examples of generated outputs include:
+
+- `model_auc_results.csv`
+- `roc_curve.png`
+- `overall_shap_importance.csv`
+- `FEATURE_FREQUENCY_TOP_20.csv`
+
+SHAP outputs are generated inside:
+
+    shap_analysis/
+
+Participant-level clustering outputs are generated inside:
+
+    clustering_results/
+
+Combined clustering outputs are generated inside:
+
+    combined_clustering_results/
 
 ---
 
@@ -205,19 +505,46 @@ Main dependencies:
 
 - numpy
 - pandas
-- scipy
+- matplotlib
 - scikit-learn
 - mne
 - mne-features
 - shap
 - xgboost
-- matplotlib
 
 Install all dependencies using:
 
-```bash
-pip install -r requirements.txt
-```
+    pip install -r requirements.txt
+
+---
+
+## Reproducibility
+
+A random seed of `42` is used in the main machine-learning experiments where applicable.
+
+The primary within-participant cross-validation uses:
+
+    StratifiedKFold(
+        n_splits=5,
+        shuffle=True,
+        random_state=42
+    )
+
+The main XGBoost, Random Forest, Dummy Classifier, and other applicable models use fixed random states as specified in the scripts.
+
+---
+
+## Notes
+
+The repository contains some experimental and commented-out approaches that were explored during development.
+
+These include alternative feature representations and experimental feature-selection approaches.
+
+The primary analysis is the EEG behavioural prediction pipeline described in this README.
+
+The main objective of the project is prediction of behavioural response from pre-response EEG activity.
+
+The clustering analyses are exploratory and are not part of the primary behavioural prediction evaluation.
 
 ---
 
