@@ -548,6 +548,12 @@ The clustering analyses are exploratory and are not part of the primary behaviou
 
 ---
 
+## AI Usage
+
+AI tools were used during the development of this project for debugging assistance, identifying and fixing programming errors, and resolving implementation issues. The final code, analysis decisions, interpretation of results and dissertation content were reviewed and developed by the author.
+
+---
+
 ## Author
 
 Adarsh Anil
